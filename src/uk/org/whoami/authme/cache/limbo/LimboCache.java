@@ -36,9 +36,9 @@ public class LimboCache {
         Location loc = player.getLocation();
         ItemStack[] inv = player.getInventory().getContents();
         ItemStack[] arm = player.getInventory().getArmorContents();
-        int gameMode = player.getGameMode().getValue();
+        //int gameMode = player.getGameMode().getValue();
 
-        cache.put(player.getName().toLowerCase(), new LimboPlayer(name, loc, inv, arm, gameMode));
+        cache.put(player.getName().toLowerCase(), new LimboPlayer(name, loc, inv, arm));
     }
 
     public void deleteLimboPlayer(String name) {

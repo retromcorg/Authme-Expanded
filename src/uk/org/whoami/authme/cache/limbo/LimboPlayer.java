@@ -28,7 +28,7 @@ public class LimboPlayer {
     private int timeoutTaskId = -1;
     private int gameMode = 0;
 
-    public LimboPlayer(String name, Location loc, ItemStack[] inventory, ItemStack[] armour, int gameMode) {
+    public LimboPlayer(String name, Location loc, ItemStack[] inventory, ItemStack[] armour) {
         this.name = name;
         this.loc = loc;
         this.inventory = inventory;
@@ -60,7 +60,4 @@ public class LimboPlayer {
         this.timeoutTaskId = timeoutTaskId;
     }
 
-    public int getGameMode() {
-        return gameMode;
-    }
 }

@@ -16,20 +16,21 @@
 
 package uk.org.whoami.authme.citizens;
 
-import net.citizensnpcs.api.CitizensManager;
+//import net.citizensnpcs.api.CitizensManager;
 
 import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.PluginManager;
 
 public class CitizensCommunicator {
-
+    //No Plans To Use Citizens Communications
     public static boolean isNPC(Entity player) {
         PluginManager pm = player.getServer().getPluginManager();
         Plugin plugin = pm.getPlugin("Citizens");
 
         if(plugin != null) {
-            return CitizensManager.isNPC(player);
+            //return CitizensManager.isNPC(player);
+            return false;
         }
         return false;
     }

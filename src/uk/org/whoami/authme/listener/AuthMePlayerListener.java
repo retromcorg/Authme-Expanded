@@ -18,7 +18,6 @@ package uk.org.whoami.authme.listener;
 
 import java.util.Date;
 
-import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerBedEnterEvent;
@@ -259,7 +258,6 @@ public class AuthMePlayerListener extends PlayerListener {
         LimboCache.getInstance().addLimboPlayer(player);
         player.getInventory().setArmorContents(new ItemStack[0]);
         player.getInventory().setContents(new ItemStack[36]);
-        player.setGameMode(GameMode.SURVIVAL);
         if (settings.isTeleportToSpawnEnabled()) {
             player.teleport(player.getWorld().getSpawnLocation());
         }

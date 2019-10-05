@@ -19,7 +19,6 @@ package uk.org.whoami.authme.commands;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
-import org.bukkit.GameMode;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -86,7 +85,6 @@ public class LoginCommand implements CommandExecutor {
                 if (limbo != null) {
                     player.getInventory().setContents(limbo.getInventory());
                     player.getInventory().setArmorContents(limbo.getArmour());
-                    player.setGameMode(GameMode.getByValue(limbo.getGameMode()));
                     if (settings.isTeleportToSpawnEnabled()) {
                         player.teleport(limbo.getLoc());
                     }
