@@ -34,6 +34,8 @@ import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 
+import static uk.org.whoami.authme.event.callLogin.callLogin;
+
 public class LoginCommand implements CommandExecutor {
 
     private Messages m = Messages.getInstance();
@@ -93,6 +95,7 @@ public class LoginCommand implements CommandExecutor {
                 }
                 player.sendMessage(m._("login"));
                 ConsoleLogger.info(player.getDisplayName() + " logged in!");
+                callLogin(player); // Run Event
             } else {
                 ConsoleLogger.info(player.getDisplayName() + " used the wrong password");
                 if (settings.isKickOnWrongPasswordEnabled()) {

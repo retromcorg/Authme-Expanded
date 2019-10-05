@@ -34,6 +34,8 @@ import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 
+import static uk.org.whoami.authme.event.callLogin.callLogin;
+
 public class RegisterCommand implements CommandExecutor {
 
     private Messages m = Messages.getInstance();
@@ -103,6 +105,7 @@ public class RegisterCommand implements CommandExecutor {
 
             player.sendMessage(m._("registered"));
             ConsoleLogger.info(player.getDisplayName() + " registered");
+            callLogin(player); // Run Event
         } catch (NoSuchAlgorithmException ex) {
             ConsoleLogger.showError(ex.getMessage());
             sender.sendMessage(m._("error"));

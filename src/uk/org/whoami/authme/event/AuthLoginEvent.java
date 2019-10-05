@@ -1,4 +1,4 @@
-package com.johnymuffin.beta.authme.event;
+package uk.org.whoami.authme.event;
 
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;

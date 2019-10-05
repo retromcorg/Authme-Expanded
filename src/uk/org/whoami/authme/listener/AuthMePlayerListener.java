@@ -49,6 +49,8 @@ import uk.org.whoami.authme.settings.Settings;
 import uk.org.whoami.authme.task.MessageTask;
 import uk.org.whoami.authme.task.TimeoutTask;
 
+import static uk.org.whoami.authme.event.callLogin.callLogin;
+
 public class AuthMePlayerListener extends PlayerListener {
 
     private Settings settings = Settings.getInstance();
@@ -246,6 +248,7 @@ public class AuthMePlayerListener extends PlayerListener {
                 if (auth.getNickname().equals(name) && auth.getIp().equals(ip) && (cur - lastLogin < timeout || timeout == 0)) {
                     PlayerCache.getInstance().addPlayer(auth);
                     player.sendMessage(m._("valid_session"));
+                    callLogin(player); // Run Event
                     return;
                 }
             }
