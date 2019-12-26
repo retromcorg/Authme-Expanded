@@ -30,6 +30,7 @@ import uk.org.whoami.authme.cache.auth.PlayerCache;
 import uk.org.whoami.authme.cache.limbo.LimboCache;
 import uk.org.whoami.authme.cache.limbo.LimboPlayer;
 import uk.org.whoami.authme.datasource.DataSource;
+import uk.org.whoami.authme.event.callLogin;
 import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
@@ -95,7 +96,7 @@ public class LoginCommand implements CommandExecutor {
                 }
                 player.sendMessage(m._("login"));
                 ConsoleLogger.info(player.getDisplayName() + " logged in!");
-                callLogin(player); // Run Event
+                callLogin(player, callLogin.Reason.AuthemeLogin); // Run Event
             } else {
                 ConsoleLogger.info(player.getDisplayName() + " used the wrong password");
                 if (settings.isKickOnWrongPasswordEnabled()) {

@@ -6,13 +6,13 @@ import org.bukkit.event.Event;
 
 public class AuthLoginEvent extends Event implements Cancellable {
     Player rplayer;
-    private Reason reason;
+    private callLogin.Reason reason;
     private boolean isCancelled = false;
 
-    public AuthLoginEvent(Reason reason, Player player) {
-        super("AuthmeLogin");
+    public AuthLoginEvent(callLogin.Reason r, Player player) {
+        super("AuthmeLoginEvent");
         rplayer = player;
-        System.out.println("Event For " + rplayer.getName());
+        reason = r;
     }
     @Override
     public boolean isCancelled() {
@@ -27,11 +27,8 @@ public class AuthLoginEvent extends Event implements Cancellable {
     public Player getPlayer() {
         return rplayer;
     }
-    public Reason getReason(){
-        return Reason.AuthemeLogin;
+    public callLogin.Reason getReason(){
+        return reason;
     }
 
-    public enum Reason{
-        AuthemeLogin
-    }
 }

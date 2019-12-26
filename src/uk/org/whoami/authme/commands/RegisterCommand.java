@@ -30,6 +30,7 @@ import uk.org.whoami.authme.cache.auth.PlayerCache;
 import uk.org.whoami.authme.cache.limbo.LimboCache;
 import uk.org.whoami.authme.cache.limbo.LimboPlayer;
 import uk.org.whoami.authme.datasource.DataSource;
+import uk.org.whoami.authme.event.callLogin;
 import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
@@ -105,7 +106,7 @@ public class RegisterCommand implements CommandExecutor {
 
             player.sendMessage(m._("registered"));
             ConsoleLogger.info(player.getDisplayName() + " registered");
-            callLogin(player); // Run Event
+            callLogin(player, callLogin.Reason.AuthmeRegister); // Run Event
         } catch (NoSuchAlgorithmException ex) {
             ConsoleLogger.showError(ex.getMessage());
             sender.sendMessage(m._("error"));
