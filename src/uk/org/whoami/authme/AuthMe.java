@@ -54,13 +54,11 @@ public class AuthMe extends JavaPlugin {
     private DataSource database;
     private Settings settings;
     private Messages m;
-    private AuthMe plugin;
 
     @Override
     public void onEnable() {
         settings = Settings.getInstance();
         m = Messages.getInstance();
-        this.plugin = this;
 
         switch (settings.getDataSource()) {
             case FILE:
@@ -136,8 +134,8 @@ public class AuthMe extends JavaPlugin {
                          Priority.Lowest, this);
 
         this.getCommand("authme").setExecutor(new AdminCommand(database));
-        this.getCommand("register").setExecutor(new RegisterCommand(database, plugin));
-        this.getCommand("login").setExecutor(new LoginCommand(database, plugin));
+        this.getCommand("register").setExecutor(new RegisterCommand(database));
+        this.getCommand("login").setExecutor(new LoginCommand(database));
         this.getCommand("changepassword").setExecutor(new ChangePasswordCommand(database));
         this.getCommand("logout").setExecutor(new LogoutCommand(this,database));
         this.getCommand("unregister").setExecutor(new UnregisterCommand(this, database));

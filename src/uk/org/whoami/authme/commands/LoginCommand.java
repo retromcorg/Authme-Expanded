@@ -16,12 +16,14 @@
 
 package uk.org.whoami.authme.commands;
 
-import org.bukkit.Bukkit;
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import uk.org.whoami.authme.AuthMe;
+
 import uk.org.whoami.authme.ConsoleLogger;
 import uk.org.whoami.authme.cache.auth.PlayerAuth;
 import uk.org.whoami.authme.cache.auth.PlayerCache;
@@ -33,10 +35,6 @@ import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 
-import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-import java.util.concurrent.TimeUnit;
-
 import static uk.org.whoami.authme.event.callLogin.callLogin;
 
 public class LoginCommand implements CommandExecutor {
@@ -44,11 +42,9 @@ public class LoginCommand implements CommandExecutor {
     private Messages m = Messages.getInstance();
     private Settings settings = Settings.getInstance();
     private DataSource database;
-    private AuthMe plugin;
 
-    public LoginCommand(DataSource database, AuthMe plugin) {
+    public LoginCommand(DataSource database) {
         this.database = database;
-        this.plugin = plugin;
     }
 
     @Override
@@ -80,46 +76,39 @@ public class LoginCommand implements CommandExecutor {
             player.sendMessage(m._("user_unknown"));
             return true;
         }
+        
+        String hash = database.getAuth(name).getHash();
 
-        //Async Start
-        Bukkit.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, () -> {
-            String hash = database.getAuth(name).getHash();
-            Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
-                try {
-                    if (PasswordSecurity.comparePasswordWithHash(args[0], hash)) {
-                        PlayerAuth auth = new PlayerAuth(name, hash, ip, new Date().getTime());
-                        database.updateSession(auth);
-                        PlayerCache.getInstance().addPlayer(auth);
-                        LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(name);
-                        if (limbo != null) {
-                            player.getInventory().setContents(limbo.getInventory());
-                            player.getInventory().setArmorContents(limbo.getArmour());
-                            if (settings.isTeleportToSpawnEnabled()) {
-                                player.teleport(limbo.getLoc());
-                            }
-                            sender.getServer().getScheduler().cancelTask(limbo.getTimeoutTaskId());
-                            LimboCache.getInstance().deleteLimboPlayer(name);
-                        }
-                        player.sendMessage(m._("login"));
-                        ConsoleLogger.info(player.getDisplayName() + " logged in!");
-                        callLogin(player, callLogin.Reason.AuthemeLogin); // Run Event
-                    } else {
-                        ConsoleLogger.info(player.getDisplayName() + " used the wrong password");
-                        if (settings.isKickOnWrongPasswordEnabled()) {
-                            player.kickPlayer(m._("wrong_pwd"));
-                        } else {
-                            player.sendMessage(m._("wrong_pwd"));
-                        }
+        try {
+            if (PasswordSecurity.comparePasswordWithHash(args[0], hash)) {
+                PlayerAuth auth = new PlayerAuth(name, hash, ip, new Date().getTime());
+                database.updateSession(auth);
+                PlayerCache.getInstance().addPlayer(auth);
+                LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(name);
+                if (limbo != null) {
+                    player.getInventory().setContents(limbo.getInventory());
+                    player.getInventory().setArmorContents(limbo.getArmour());
+                    if (settings.isTeleportToSpawnEnabled()) {
+                        player.teleport(limbo.getLoc());
                     }
-                } catch (NoSuchAlgorithmException ex) {
-                    ConsoleLogger.showError(ex.getMessage());
-                    sender.sendMessage(m._("error"));
+                    sender.getServer().getScheduler().cancelTask(limbo.getTimeoutTaskId());
+                    LimboCache.getInstance().deleteLimboPlayer(name);
                 }
-            }, 0L);
-
-        }, 0L);
-
-        //Async End
+                player.sendMessage(m._("login"));
+                ConsoleLogger.info(player.getDisplayName() + " logged in!");
+                callLogin(player, callLogin.Reason.AuthemeLogin); // Run Event
+            } else {
+                ConsoleLogger.info(player.getDisplayName() + " used the wrong password");
+                if (settings.isKickOnWrongPasswordEnabled()) {
+                    player.kickPlayer(m._("wrong_pwd"));
+                } else {
+                    player.sendMessage(m._("wrong_pwd"));
+                }
+            }
+        } catch (NoSuchAlgorithmException ex) {
+            ConsoleLogger.showError(ex.getMessage());
+            sender.sendMessage(m._("error"));
+        }
         return true;
     }
 }
