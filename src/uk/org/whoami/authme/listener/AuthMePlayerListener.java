@@ -16,32 +16,19 @@
 
 package uk.org.whoami.authme.listener;
 
-import java.util.Date;
-
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
-import org.bukkit.event.player.PlayerBedEnterEvent;
-import org.bukkit.event.player.PlayerChatEvent;
-import org.bukkit.event.player.PlayerCommandPreprocessEvent;
-import org.bukkit.event.player.PlayerDropItemEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerKickEvent;
-import org.bukkit.event.player.PlayerListener;
-import org.bukkit.event.player.PlayerLoginEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.event.player.PlayerLoginEvent.Result;
-import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.event.player.PlayerPickupItemEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
-
+import uk.org.whoami.authme.AuthMe;
 import uk.org.whoami.authme.cache.auth.PlayerAuth;
 import uk.org.whoami.authme.cache.auth.PlayerCache;
-import uk.org.whoami.authme.cache.limbo.LimboPlayer;
 import uk.org.whoami.authme.cache.limbo.LimboCache;
+import uk.org.whoami.authme.cache.limbo.LimboPlayer;
 import uk.org.whoami.authme.citizens.CitizensCommunicator;
 import uk.org.whoami.authme.datasource.DataSource;
 import uk.org.whoami.authme.event.callLogin;
@@ -49,6 +36,8 @@ import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 import uk.org.whoami.authme.task.MessageTask;
 import uk.org.whoami.authme.task.TimeoutTask;
+
+import java.util.Date;
 
 import static uk.org.whoami.authme.event.callLogin.callLogin;
 
@@ -59,7 +48,7 @@ public class AuthMePlayerListener extends PlayerListener {
     private JavaPlugin plugin;
     private DataSource data;
 
-    public AuthMePlayerListener(JavaPlugin plugin, DataSource data) {
+    public AuthMePlayerListener(AuthMe plugin, DataSource data) {
         this.plugin = plugin;
         this.data = data;
     }
@@ -173,8 +162,8 @@ public class AuthMePlayerListener extends PlayerListener {
         Location to = event.getTo();
 
         if (to.getX() > spawn.getX() + radius || to.getX() < spawn.getX() - radius ||
-            to.getY() > spawn.getY() + radius || to.getY() < spawn.getY() - radius ||
-            to.getZ() > spawn.getZ() + radius || to.getZ() < spawn.getZ() - radius) {
+                to.getY() > spawn.getY() + radius || to.getY() < spawn.getY() - radius ||
+                to.getZ() > spawn.getZ() + radius || to.getZ() < spawn.getZ() - radius) {
             event.setTo(event.getFrom());
         }
     }
@@ -239,42 +228,98 @@ public class AuthMePlayerListener extends PlayerListener {
             return;
         }
 
-        if (data.isAuthAvailable(name)) {
-            if (settings.isSessionsEnabled()) {
+        if (!settings.isForcedRegistrationEnabled()) {
+            return;
+        }
+        //RetroMC Async Start
+        Bukkit.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, () -> {
+            if (data.isAuthAvailable(name)) {
                 PlayerAuth auth = data.getAuth(name);
-                long timeout = settings.getSessionTimeout() * 60000;
-                long lastLogin = auth.getLastLogin();
-                long cur = new Date().getTime();
+                Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                    if (settings.isSessionsEnabled()) {
+                        long timeout = settings.getSessionTimeout() * 60000;
+                        long lastLogin = auth.getLastLogin();
+                        long cur = new Date().getTime();
 
-                if (auth.getNickname().equals(name) && auth.getIp().equals(ip) && (cur - lastLogin < timeout || timeout == 0)) {
-                    PlayerCache.getInstance().addPlayer(auth);
-                    player.sendMessage(m._("valid_session"));
-                    callLogin(player, callLogin.Reason.AuthmeSession); // Run Event
+                        if (auth.getNickname().equals(name) && auth.getIp().equals(ip) && (cur - lastLogin < timeout || timeout == 0)) {
+                            PlayerCache.getInstance().addPlayer(auth);
+                            player.sendMessage(m._("valid_session"));
+                            callLogin(player, callLogin.Reason.AuthmeSession); // Run Event
+                            return;
+                        }
+                    }
+                }, 0L);
+            } else {
+                if (!settings.isForcedRegistrationEnabled()) {
                     return;
                 }
             }
-        } else {
-            if (!settings.isForcedRegistrationEnabled()) {
-                return;
-            }
-        }
+            Boolean isAuthAvailable = data.isAuthAvailable(name);
+            Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                LimboCache.getInstance().addLimboPlayer(player);
+                player.getInventory().setArmorContents(new ItemStack[0]);
+                player.getInventory().setContents(new ItemStack[36]);
+                if (settings.isTeleportToSpawnEnabled()) {
+                    player.teleport(player.getWorld().getSpawnLocation());
+                }
 
-        LimboCache.getInstance().addLimboPlayer(player);
-        player.getInventory().setArmorContents(new ItemStack[0]);
-        player.getInventory().setContents(new ItemStack[36]);
-        if (settings.isTeleportToSpawnEnabled()) {
-            player.teleport(player.getWorld().getSpawnLocation());
-        }
+                String msg = isAuthAvailable ? m._("login_msg") : m._("reg_msg");
+                int time = settings.getRegistrationTimeout() * 20;
+                int msgInterval = settings.getWarnMessageInterval();
+                BukkitScheduler sched = plugin.getServer().getScheduler();
+                if (time != 0) {
+                    int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, name), time);
+                    LimboCache.getInstance().getLimboPlayer(name).setTimeoutTaskId(id);
+                }
+                sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, name, msg, msgInterval));
 
-        String msg = data.isAuthAvailable(name) ? m._("login_msg") : m._("reg_msg");
-        int time = settings.getRegistrationTimeout() * 20;
-        int msgInterval = settings.getWarnMessageInterval();
-        BukkitScheduler sched = plugin.getServer().getScheduler();
-        if (time != 0) {
-            int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, name), time);
-            LimboCache.getInstance().getLimboPlayer(name).setTimeoutTaskId(id);
-        }
-        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, name, msg, msgInterval));
+
+            }, 0L);
+
+
+
+
+
+        }, 0L);
+        //RetroMC Async End
+
+
+//        if (data.isAuthAvailable(name)) {
+//            if (settings.isSessionsEnabled()) {
+//                PlayerAuth auth = data.getAuth(name);
+//                long timeout = settings.getSessionTimeout() * 60000;
+//                long lastLogin = auth.getLastLogin();
+//                long cur = new Date().getTime();
+//
+//                if (auth.getNickname().equals(name) && auth.getIp().equals(ip) && (cur - lastLogin < timeout || timeout == 0)) {
+//                    PlayerCache.getInstance().addPlayer(auth);
+//                    player.sendMessage(m._("valid_session"));
+//                    callLogin(player, callLogin.Reason.AuthmeSession); // Run Event
+//                    return;
+//                }
+//            }
+//        } else {
+//            if (!settings.isForcedRegistrationEnabled()) {
+//                return;
+//            }
+//        }
+
+//        LimboCache.getInstance().addLimboPlayer(player);
+//        player.getInventory().setArmorContents(new ItemStack[0]);
+//        player.getInventory().setContents(new ItemStack[36]);
+//        if (settings.isTeleportToSpawnEnabled()) {
+//            player.teleport(player.getWorld().getSpawnLocation());
+//        }
+//
+//        String msg = data.isAuthAvailable(name) ? m._("login_msg") : m._("reg_msg");
+//        int time = settings.getRegistrationTimeout() * 20;
+//        int msgInterval = settings.getWarnMessageInterval();
+//        BukkitScheduler sched = plugin.getServer().getScheduler();
+//        if (time != 0) {
+//            int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, name), time);
+//            LimboCache.getInstance().getLimboPlayer(name).setTimeoutTaskId(id);
+//        }
+//        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, name, msg, msgInterval));
     }
 
     @Override

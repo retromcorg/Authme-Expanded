@@ -16,14 +16,12 @@
 
 package uk.org.whoami.authme.commands;
 
-import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
+import uk.org.whoami.authme.AuthMe;
 import uk.org.whoami.authme.ConsoleLogger;
 import uk.org.whoami.authme.cache.auth.PlayerAuth;
 import uk.org.whoami.authme.cache.auth.PlayerCache;
@@ -35,6 +33,9 @@ import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+
 import static uk.org.whoami.authme.event.callLogin.callLogin;
 
 public class RegisterCommand implements CommandExecutor {
@@ -42,9 +43,11 @@ public class RegisterCommand implements CommandExecutor {
     private Messages m = Messages.getInstance();
     private Settings settings = Settings.getInstance();
     private DataSource database;
+    private AuthMe plugin;
 
-    public RegisterCommand(DataSource database) {
+    public RegisterCommand(DataSource database, AuthMe plugin) {
         this.database = database;
+        this.plugin = plugin;
     }
 
     @Override
@@ -77,40 +80,52 @@ public class RegisterCommand implements CommandExecutor {
             return true;
         }
 
-        if (database.isAuthAvailable(player.getName().toLowerCase())) {
-            player.sendMessage(m._("user_regged"));
-            return true;
-        }
+        Bukkit.getServer().getScheduler().scheduleAsyncDelayedTask(plugin, () -> {
+            Boolean isAuthAvailable = database.isAuthAvailable(player.getName().toLowerCase());
+            if (isAuthAvailable) {
+                Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                    player.sendMessage(m._("user_regged"));
+                }, 0L);
+            } else {
+                Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, () -> {
+                    try {
+                        String hash = PasswordSecurity.getHash(settings.getPasswordHash(), args[0]);
 
-        try {
-            String hash = PasswordSecurity.getHash(settings.getPasswordHash(), args[0]);
+                        PlayerAuth auth = new PlayerAuth(name, hash, ip, new Date().getTime());
+                        if (!database.saveAuth(auth)) {
+                            player.sendMessage(m._("error"));
+                        }
+                        PlayerCache.getInstance().addPlayer(auth);
 
-            PlayerAuth auth = new PlayerAuth(name, hash, ip, new Date().getTime());
-            if (!database.saveAuth(auth)) {
-                player.sendMessage(m._("error"));
-                return true;
+                        LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(name);
+                        if (limbo != null) {
+                            player.getInventory().setContents(limbo.getInventory());
+                            player.getInventory().setArmorContents(limbo.getArmour());
+                            if (settings.isTeleportToSpawnEnabled()) {
+                                player.teleport(limbo.getLoc());
+                            }
+
+                            sender.getServer().getScheduler().cancelTask(limbo.getTimeoutTaskId());
+                            LimboCache.getInstance().deleteLimboPlayer(name);
+                        }
+
+                        player.sendMessage(m._("registered"));
+                        ConsoleLogger.info(player.getDisplayName() + " registered");
+                        callLogin(player, callLogin.Reason.AuthmeRegister); // Run Event
+                    } catch (NoSuchAlgorithmException ex) {
+                        ConsoleLogger.showError(ex.getMessage());
+                        sender.sendMessage(m._("error"));
+                    }
+                }, 0L);
             }
-            PlayerCache.getInstance().addPlayer(auth);
 
-            LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(name);
-            if (limbo != null) {
-                player.getInventory().setContents(limbo.getInventory());
-                player.getInventory().setArmorContents(limbo.getArmour());
-                if (settings.isTeleportToSpawnEnabled()) {
-                    player.teleport(limbo.getLoc());
-                }
 
-                sender.getServer().getScheduler().cancelTask(limbo.getTimeoutTaskId());
-                LimboCache.getInstance().deleteLimboPlayer(name);
-            }
+        }, 0L);
+//        if (database.isAuthAvailable(player.getName().toLowerCase())) {
+//            player.sendMessage(m._("user_regged"));
+//            return true;
+//        }
 
-            player.sendMessage(m._("registered"));
-            ConsoleLogger.info(player.getDisplayName() + " registered");
-            callLogin(player, callLogin.Reason.AuthmeRegister); // Run Event
-        } catch (NoSuchAlgorithmException ex) {
-            ConsoleLogger.showError(ex.getMessage());
-            sender.sendMessage(m._("error"));
-        }
         return true;
     }
 }
