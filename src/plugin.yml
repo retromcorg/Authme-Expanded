@@ -3,6 +3,7 @@ author: whoami
 description: AuthMe prevents people, which aren't logged in, from doing stuff like placing blocks, moving, typing commands or seeing the inventory of the current player.
 main: uk.org.whoami.authme.AuthMe
 version: 2.9
+softdepend: [EvolutionCore]
 commands:
     register:
         description: Register an account

@@ -14,6 +14,7 @@ public class callLogin {
     public enum Reason{
         AuthemeLogin,
         AuthmeRegister,
-        AuthmeSession
+        AuthmeSession,
+        EvolutionAuth
     }
 }

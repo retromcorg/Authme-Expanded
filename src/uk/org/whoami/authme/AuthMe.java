@@ -16,9 +16,6 @@
 
 package uk.org.whoami.authme;
 
-import java.io.IOException;
-import java.sql.SQLException;
-
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
@@ -26,28 +23,26 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
-
 import uk.org.whoami.authme.cache.auth.PlayerAuth;
 import uk.org.whoami.authme.cache.auth.PlayerCache;
 import uk.org.whoami.authme.cache.limbo.LimboCache;
-import uk.org.whoami.authme.commands.AdminCommand;
-import uk.org.whoami.authme.commands.ChangePasswordCommand;
-import uk.org.whoami.authme.commands.LoginCommand;
-import uk.org.whoami.authme.commands.LogoutCommand;
-import uk.org.whoami.authme.commands.RegisterCommand;
-import uk.org.whoami.authme.commands.UnregisterCommand;
+import uk.org.whoami.authme.commands.*;
 import uk.org.whoami.authme.datasource.CacheDataSource;
 import uk.org.whoami.authme.datasource.DataSource;
 import uk.org.whoami.authme.datasource.FileDataSource;
 import uk.org.whoami.authme.datasource.MiniConnectionPoolManager.TimeoutException;
 import uk.org.whoami.authme.datasource.MySQLDataSource;
 import uk.org.whoami.authme.listener.AuthMeBlockListener;
+import uk.org.whoami.authme.listener.AuthMeCustomListener;
 import uk.org.whoami.authme.listener.AuthMeEntityListener;
 import uk.org.whoami.authme.listener.AuthMePlayerListener;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 import uk.org.whoami.authme.task.MessageTask;
 import uk.org.whoami.authme.task.TimeoutTask;
+
+import java.io.IOException;
+import java.sql.SQLException;
 
 public class AuthMe extends JavaPlugin {
 
@@ -81,7 +76,7 @@ public class AuthMe extends JavaPlugin {
                     ConsoleLogger.showError(ex.getMessage());
                     this.getServer().getPluginManager().disablePlugin(this);
                     return;
-                } catch(TimeoutException ex) {
+                } catch (TimeoutException ex) {
                     ConsoleLogger.showError(ex.getMessage());
                     this.getServer().getPluginManager().disablePlugin(this);
                     return;
@@ -96,55 +91,57 @@ public class AuthMe extends JavaPlugin {
         AuthMePlayerListener playerListener = new AuthMePlayerListener(this, database);
         AuthMeBlockListener blockListener = new AuthMeBlockListener(database);
         AuthMeEntityListener entityListener = new AuthMeEntityListener(database);
+        AuthMeCustomListener customListener = new AuthMeCustomListener(this);
 
         PluginManager pm = getServer().getPluginManager();
+
+        pm.registerEvent(Event.Type.CUSTOM_EVENT, customListener,
+                Priority.Normal, this);
         pm.registerEvent(Event.Type.PLAYER_COMMAND_PREPROCESS, playerListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_CHAT, playerListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_LOGIN, playerListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_JOIN, playerListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_KICK, playerListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_PICKUP_ITEM, playerListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_INTERACT, playerListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_INTERACT_ENTITY, playerListener,
-                         Priority.Low, this);
+                Priority.Low, this);
         pm.registerEvent(Event.Type.PLAYER_DROP_ITEM, playerListener,
-                         Priority.Low, this);
+                Priority.Low, this);
         pm.registerEvent(Event.Type.PLAYER_BED_ENTER, playerListener,
-                         Priority.Low, this);
+                Priority.Low, this);
         pm.registerEvent(Event.Type.BLOCK_PLACE, blockListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.BLOCK_BREAK, blockListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         //pm.registerEvent(Event.Type.FOOD_LEVEL_CHANGE, entityListener,
-                         //Priority.Low, this);
+        //Priority.Low, this);
         pm.registerEvent(Event.Type.ENTITY_DAMAGE, entityListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
         pm.registerEvent(Event.Type.ENTITY_TARGET, entityListener,
-                         Priority.Lowest, this);
+                Priority.Lowest, this);
 
         this.getCommand("authme").setExecutor(new AdminCommand(database));
         this.getCommand("register").setExecutor(new RegisterCommand(database));
         this.getCommand("login").setExecutor(new LoginCommand(database));
         this.getCommand("changepassword").setExecutor(new ChangePasswordCommand(database));
-        this.getCommand("logout").setExecutor(new LogoutCommand(this,database));
+        this.getCommand("logout").setExecutor(new LogoutCommand(this, database));
         this.getCommand("unregister").setExecutor(new UnregisterCommand(this, database));
 
         onReload(this.getServer().getOnlinePlayers());
         ConsoleLogger.info("Authme " + this.getDescription().getVersion() + " enabled");
     }
-
-
 
 
     @Override
