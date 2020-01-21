@@ -144,12 +144,20 @@ public class AuthMe extends JavaPlugin {
         ConsoleLogger.info("Authme " + this.getDescription().getVersion() + " enabled");
     }
 
+
+
+
     @Override
     public void onDisable() {
         if (database != null) {
             database.close();
         }
         ConsoleLogger.info("Authme " + this.getDescription().getVersion() + " disabled");
+    }
+
+
+    public DataSource getAuthDatabase() {
+        return database;
     }
 
     private void onReload(Player[] players) {
