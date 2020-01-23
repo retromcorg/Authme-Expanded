@@ -12,6 +12,7 @@ import uk.org.whoami.authme.cache.auth.PlayerCache;
 import uk.org.whoami.authme.cache.limbo.LimboCache;
 import uk.org.whoami.authme.cache.limbo.LimboPlayer;
 import uk.org.whoami.authme.event.callLogin;
+import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 
 import static uk.org.whoami.authme.event.callLogin.callLogin;
@@ -50,6 +51,12 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                     return;
                 }
 
+                //Check if we should authenticate user
+                if(!Settings.getInstance().isAuthenticatedSkipLoginEnabled()) {
+                    return;
+                }
+
+
                 //Lets authenticate the user
                 PlayerAuth auth = plugin.getAuthDatabase().getAuth(playerName);
                 PlayerCache.getInstance().addPlayer(auth);
@@ -69,9 +76,21 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                 ConsoleLogger.info(player.getDisplayName() + " Automatically Authenticated With Evolution!");
                 String msg = "&6You have been Authenticated &6with Beta Evolution";
                 msg = msg.replaceAll("(&([a-f0-9]))", "\u00A7$2");
-                player.sendMessage(msg);
-
+                player.sendMessage(Messages.getInstance()._("userAuthenticated"));
                 callLogin(((PlayerEvolutionAuthEvent) event).getPlayer(), callLogin.Reason.EvolutionAuth);
+                return;
+
+            } else {
+                //User isn't authenticated
+                if (Settings.getInstance().isKickNonAuthenticatedEnabled()) {
+                    //Kick non authenticated users
+                    player.kickPlayer(Messages.getInstance()._("unauthenticatedKick"));
+                    return;
+                }
+                //Is notify of Beta Evolutions turned on
+                if(Settings.getInstance().isNotifyNonAuthenticatedEnabled()) {
+                    player.sendMessage(Messages.getInstance()._("notifyUnauthenticated"));
+                }
 
 
             }

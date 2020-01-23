@@ -73,6 +73,9 @@ public final class Settings extends Configuration {
         getMySQLColumnPassword();
         getMySQLColumnIp();
         getMySQLColumnLastLogin();
+        isAuthenticatedSkipLoginEnabled();
+        isKickNonAuthenticatedEnabled();
+        isNotifyNonAuthenticatedEnabled();
         save();
     }
 
@@ -311,6 +314,31 @@ public final class Settings extends Configuration {
         }
         return getString(key);
     }
+
+    public boolean isAuthenticatedSkipLoginEnabled() {
+        String key = "betaevolutions.authenticated.skiplogin";
+        if (getString(key) == null) {
+            setProperty(key, true);
+        }
+        return getBoolean(key, true);
+    }
+
+    public boolean isKickNonAuthenticatedEnabled() {
+        String key = "betaevolutions.unauthenticated.kick";
+        if (getString(key) == null) {
+            setProperty(key, false);
+        }
+        return getBoolean(key, false);
+    }
+
+    public boolean isNotifyNonAuthenticatedEnabled() {
+        String key = "betaevolutions.unauthenticated.notify";
+        if (getString(key) == null) {
+            setProperty(key, false);
+        }
+        return getBoolean(key, false);
+    }
+
 
     public static Settings getInstance() {
         if (singleton == null) {
