@@ -76,6 +76,7 @@ public final class Settings extends Configuration {
         isAuthenticatedSkipLoginEnabled();
         isKickNonAuthenticatedEnabled();
         isNotifyNonAuthenticatedEnabled();
+        isNotifyNonAuthenticatedOnRegistrationEnabled();
         save();
     }
 
@@ -337,6 +338,15 @@ public final class Settings extends Configuration {
             setProperty(key, false);
         }
         return getBoolean(key, false);
+    }
+
+
+    public boolean isNotifyNonAuthenticatedOnRegistrationEnabled() {
+        String key = "betaevolutions.unauthenticated.notifynonregistration";
+        if (getString(key) == null) {
+            setProperty(key, true);
+        }
+        return getBoolean(key, true);
     }
 
 

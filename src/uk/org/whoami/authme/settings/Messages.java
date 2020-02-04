@@ -61,7 +61,7 @@ public class Messages extends Configuration {
         map.put("unknown_user", "User is not in database");
         map.put("userAuthenticated", "&6You have been Authenticated &6with Beta Evolution");
         map.put("unauthenticatedKick", "Sorry, this server requires Beta Evolutions: bit.ly/BetaEVO");
-        map.put("notifyUnauthenticated", "&6This server support Beta Evolutions, you can download it at &bbit.ly/BetaEVO");
+        map.put("notifyUnauthenticated", "&6This server supports Beta Evolutions, you can download it at &bbit.ly/BetaEVO");
     }
 
     private void loadFile() {

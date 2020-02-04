@@ -1,6 +1,7 @@
 package uk.org.whoami.authme.listener;
 
 import com.johnymuffin.beta.evolutioncore.event.PlayerEvolutionAuthEvent;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.CustomEventListener;
 import org.bukkit.event.Event;
@@ -11,10 +12,12 @@ import uk.org.whoami.authme.cache.auth.PlayerAuth;
 import uk.org.whoami.authme.cache.auth.PlayerCache;
 import uk.org.whoami.authme.cache.limbo.LimboCache;
 import uk.org.whoami.authme.cache.limbo.LimboPlayer;
+import uk.org.whoami.authme.event.AuthLoginEvent;
 import uk.org.whoami.authme.event.callLogin;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 
+import static com.johnymuffin.beta.evolutioncore.EvolutionAPI.isUserAuthenticatedInCache;
 import static uk.org.whoami.authme.event.callLogin.callLogin;
 
 public class AuthMeCustomListener extends CustomEventListener implements Listener {
@@ -24,11 +27,21 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
         this.plugin = plugin;
     }
 
+    public boolean isClass(String className) {
+        try  {
+            Class.forName(className);
+            return true;
+        }  catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
 
     @Override
     public void onCustomEvent(Event event) {
-        if (event instanceof PlayerEvolutionAuthEvent) {
+
+        if (isClass("com.johnymuffin.beta.evolutioncore.event.PlayerEvolutionAuthEvent") && (event instanceof PlayerEvolutionAuthEvent)) {
             if (event == null) {
+                ConsoleLogger.showError("Received an event with a null value");
                 return;
             }
 
@@ -52,7 +65,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                 }
 
                 //Check if we should authenticate user
-                if(!Settings.getInstance().isAuthenticatedSkipLoginEnabled()) {
+                if (!Settings.getInstance().isAuthenticatedSkipLoginEnabled()) {
                     return;
                 }
 
@@ -88,8 +101,50 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                     return;
                 }
                 //Is notify of Beta Evolutions turned on
-                if(Settings.getInstance().isNotifyNonAuthenticatedEnabled()) {
+                if (Settings.getInstance().isNotifyNonAuthenticatedEnabled()) {
                     player.sendMessage(Messages.getInstance()._("notifyUnauthenticated"));
+                }
+
+
+            }
+
+
+        } else if (event instanceof AuthLoginEvent) {
+            if(event == null || ((AuthLoginEvent) event).getPlayer() == null) {
+                ConsoleLogger.showError("Received an event with a null value");
+                return;
+            }
+
+
+            //Send user on registration Beta Evolution download event
+
+            //Check if we already message all unauthenticated evolutions players
+            if (Settings.getInstance().isNotifyNonAuthenticatedEnabled()) {
+                return;
+            }
+            if (!Settings.getInstance().isNotifyNonAuthenticatedOnRegistrationEnabled()) {
+                return;
+            }
+
+
+            //Is user registering
+            if (((AuthLoginEvent) event).getReason() == callLogin.Reason.AuthmeRegister) {
+                Player player = ((AuthLoginEvent) event).getPlayer();
+                String ip = player.getAddress().getAddress().getHostAddress();
+                //If user isn't authenticated using beta evolutions
+                if (isClass("com.johnymuffin.beta.evolutioncore.EvolutionAPI") && !isUserAuthenticatedInCache(player.getName(), ip)) {
+                    //Wait 5 seconds to ensure Beta Evolutions has responsed
+                    Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
+                        @Override
+                        public void run() {
+                            if (player.isOnline()) {
+                                player.sendMessage(Messages.getInstance()._("notifyUnauthenticated"));
+                            }
+
+
+                        }
+                    }, 20 * 3L);
+
                 }
 
 
