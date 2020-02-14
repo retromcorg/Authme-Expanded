@@ -77,6 +77,7 @@ public final class Settings extends Configuration {
         isKickNonAuthenticatedEnabled();
         isNotifyNonAuthenticatedEnabled();
         isNotifyNonAuthenticatedOnRegistrationEnabled();
+        isKickNonAuthenticatedStaff();
         save();
     }
 
