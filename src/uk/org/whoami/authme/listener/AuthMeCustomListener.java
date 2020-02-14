@@ -95,6 +95,16 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
 
             } else {
                 //User isn't authenticated
+
+                //Is kick staff if not authenticated enabled
+                if(Settings.getInstance().isKickNonAuthenticatedStaff()) {
+                    if(player.hasPermission("authme.evolutions.staff")) {
+                        player.kickPlayer(Messages.getInstance()._("notifyUnauthenticatedStaff"));
+                        return;
+                    }
+                }
+
+                //Kick non authenticated
                 if (Settings.getInstance().isKickNonAuthenticatedEnabled()) {
                     //Kick non authenticated users
                     player.kickPlayer(Messages.getInstance()._("unauthenticatedKick"));

@@ -349,6 +349,15 @@ public final class Settings extends Configuration {
         return getBoolean(key, true);
     }
 
+    public boolean isKickNonAuthenticatedStaff() {
+        String key = "betaevolutions.unauthenticated.kickstaff";
+        if (getString(key) == null) {
+            setProperty(key, false);
+        }
+        return getBoolean(key, false);
+    }
+
+
 
     public static Settings getInstance() {
         if (singleton == null) {

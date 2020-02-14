@@ -62,6 +62,7 @@ public class Messages extends Configuration {
         map.put("userAuthenticated", "&6You have been Authenticated &6with Beta Evolution");
         map.put("unauthenticatedKick", "Sorry, this server requires Beta Evolutions: bit.ly/BetaEVO");
         map.put("notifyUnauthenticated", "&6This server supports Beta Evolutions, you can download it at &bbit.ly/BetaEVO");
+        map.put("notifyUnauthenticatedStaff", "&6Staff need to have Beta Evolutions, you can download it at &bbit.ly/BetaEVO");
     }
 
     private void loadFile() {
