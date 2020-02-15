@@ -62,6 +62,17 @@ public class LoginCommand implements CommandExecutor {
         String name = player.getName().toLowerCase();
         String ip = player.getAddress().getAddress().getHostAddress();
 
+        //Check if user is staff
+        if(player.hasPermission("authme.evolutions.staff") || player.isOp()) {
+            if(Settings.getInstance().isKickNonAuthenticatedStaff()) {
+                //If staff login is disabled cancel
+                return true;
+
+            }
+
+        }
+
+
         if (PlayerCache.getInstance().isAuthenticated(name)) {
             player.sendMessage(m._("logged_in"));
             return true;

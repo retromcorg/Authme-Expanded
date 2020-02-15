@@ -40,6 +40,9 @@ permissions:
              authme.admin.changepassword: true
              authme.admin.unregister: true
              authme.admin.purge: true
+             authme.evolutions.staff: true
+#    authme.evolutions.staff:
+#        description: Require user to have Beta Evolutions
     authme.register:
         description: Register an account
         default: true

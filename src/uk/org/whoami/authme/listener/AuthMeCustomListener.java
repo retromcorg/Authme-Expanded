@@ -98,7 +98,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
 
                 //Is kick staff if not authenticated enabled
                 if(Settings.getInstance().isKickNonAuthenticatedStaff()) {
-                    if(player.hasPermission("authme.evolutions.staff")) {
+                    if(player.hasPermission("authme.evolutions.staff") || player.isOp()) {
                         player.kickPlayer(Messages.getInstance()._("notifyUnauthenticatedStaff"));
                         return;
                     }
@@ -143,7 +143,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                 String ip = player.getAddress().getAddress().getHostAddress();
                 //If user isn't authenticated using beta evolutions
                 if (isClass("com.johnymuffin.beta.evolutioncore.EvolutionAPI") && !isUserAuthenticatedInCache(player.getName(), ip)) {
-                    //Wait 5 seconds to ensure Beta Evolutions has responsed
+                    //Wait 3 seconds to ensure Beta Evolutions has responsed
                     Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
                         @Override
                         public void run() {
