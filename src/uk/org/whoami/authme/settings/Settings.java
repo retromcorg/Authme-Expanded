@@ -82,6 +82,7 @@ public final class Settings extends Configuration {
         isUUIDCoreSupportModeEnabled();
         isMessageOnFailedUUIDEnabled();
         isKickOnFailedUUIDEnabled();
+        isAllowUUIDFailedToRegisterEnabled();
         save();
     }
 
@@ -392,6 +393,14 @@ public final class Settings extends Configuration {
             setProperty(key, true);
         }
         return getBoolean(key, true);
+    }
+
+    public boolean isAllowUUIDFailedToRegisterEnabled() {
+        String key = "UUIDCore.allowFailedUUIDRegistration";
+        if (getString(key) == null) {
+            setProperty(key, false);
+        }
+        return getBoolean(key, false);
     }
 
 

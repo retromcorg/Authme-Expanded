@@ -63,8 +63,9 @@ public class Messages extends Configuration {
         map.put("unauthenticatedKick", "Sorry, this server requires Beta Evolutions: bit.ly/BetaEVO");
         map.put("notifyUnauthenticated", "&6This server supports Beta Evolutions, you can download it at &bbit.ly/BetaEVO");
         map.put("notifyUnauthenticatedStaff", "&6Staff need to have Beta Evolutions, you can download it at &bbit.ly/BetaEVO");
-        map.put("uuidFetchFailedMessage", "&4We failed to find a UUID for your username, please ensure you own your current username.\n&4We do not support cracked users");
-        map.put("uuidFetchFailedKick", "&4Please ensure you own your current account, otherwise try again later.");
+        map.put("uuidFetchFailedMessage", "&4We failed to find a UUID for your username, please ensure you own your current username. We do not support cracked users");
+        map.put("uuidFailedRegisterError", "&5Sorry, a UUID for your username could not be found, Please register with a username you own. If this is an error please try again or reconnect");
+        map.put("uuidFetchFailedKick", "&4Please ensure you own your current username, otherwise please try to reconnect.");
     }
 
     private void loadFile() {

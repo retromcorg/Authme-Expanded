@@ -145,13 +145,15 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                 Player player = ((AuthLoginEvent) event).getPlayer();
                 String ip = player.getAddress().getAddress().getHostAddress();
                 //If user isn't authenticated using beta evolutions
-                if (isClass("com.johnymuffin.beta.evolutioncore.EvolutionAPI") && !isUserAuthenticatedInCache(player.getName(), ip)) {
-                    //Wait 3 seconds to ensure Beta Evolutions has responsed
+                if (plugin.isBetaEvolutionsEnabled()) {
+                    //Wait 3 seconds to ensure Beta Evolutions has responded
                     Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
                         @Override
                         public void run() {
-                            if (player.isOnline()) {
-                                player.sendMessage(Messages.getInstance()._("notifyUnauthenticated"));
+                            if(!isUserAuthenticatedInCache(player.getName(), ip)) {
+                                if (player.isOnline()) {
+                                    player.sendMessage(Messages.getInstance()._("notifyUnauthenticated"));
+                                }
                             }
 
 
@@ -179,6 +181,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
 
             //If UUID Fails
             if (!uuidStatus) {
+                ConsoleLogger.info("User \"" + ((PlayerUUIDEvent) event).getPlayer().getName() + "\" does not have a valid UUID");
                 if(Settings.getInstance().isKickOnFailedUUIDEnabled()) {
                     player.kickPlayer(Messages.getInstance()._("uuidFetchFailedKick"));
                     return;

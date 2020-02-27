@@ -16,14 +16,12 @@
 
 package uk.org.whoami.authme.commands;
 
-import java.security.NoSuchAlgorithmException;
-import java.util.Date;
-
+import com.johnymuffin.uuidcore.UUIDAPI;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-
+import uk.org.whoami.authme.AuthMe;
 import uk.org.whoami.authme.ConsoleLogger;
 import uk.org.whoami.authme.cache.auth.PlayerAuth;
 import uk.org.whoami.authme.cache.auth.PlayerCache;
@@ -35,6 +33,10 @@ import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+import java.util.UUID;
+
 import static uk.org.whoami.authme.event.callLogin.callLogin;
 
 public class RegisterCommand implements CommandExecutor {
@@ -42,9 +44,11 @@ public class RegisterCommand implements CommandExecutor {
     private Messages m = Messages.getInstance();
     private Settings settings = Settings.getInstance();
     private DataSource database;
+    private AuthMe plugin;
 
-    public RegisterCommand(DataSource database) {
+    public RegisterCommand(AuthMe plugin, DataSource database) {
         this.database = database;
+        this.plugin = plugin;
     }
 
     @Override
@@ -61,6 +65,19 @@ public class RegisterCommand implements CommandExecutor {
         Player player = (Player) sender;
         String name = player.getName().toLowerCase();
         String ip = player.getAddress().getAddress().getHostAddress();
+
+        if (plugin.isUUIDCoreEnabled()) {
+            UUID playerUUID = UUIDAPI.getUserUUID(name, false);
+            if (playerUUID == null) {
+                //See if player without a UUID can register
+                if (!Settings.getInstance().isAllowUUIDFailedToRegisterEnabled()) {
+                    //No UUID is known for the player
+                    player.sendMessage(m._("uuidFailedRegisterError"));
+                    return true;
+                }
+            }
+        }
+
 
         if (PlayerCache.getInstance().isAuthenticated(name)) {
             player.sendMessage(m._("logged_in"));
