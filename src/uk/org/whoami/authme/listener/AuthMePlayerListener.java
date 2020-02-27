@@ -274,7 +274,7 @@ public class AuthMePlayerListener extends PlayerListener {
             int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, name), time);
             LimboCache.getInstance().getLimboPlayer(name).setTimeoutTaskId(id);
         }
-        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, name, msg, msgInterval), 30); //Wait 1.5 seconds before starting AuthMe Login Message Task
+        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, name, msg, msgInterval), 15); //Wait 0.75 seconds before starting AuthMe Login Message Task
     }
 
     @Override

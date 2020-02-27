@@ -16,6 +16,7 @@
 
 package uk.org.whoami.authme;
 
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
@@ -43,15 +44,20 @@ import uk.org.whoami.authme.task.TimeoutTask;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.logging.Logger;
 
 public class AuthMe extends JavaPlugin {
 
+    private Logger log;
     private DataSource database;
     private Settings settings;
     private Messages m;
+    private boolean isUUIDCoreEnabled;
+    private boolean isBetaEvolutionsEnabled;
 
     @Override
     public void onEnable() {
+        log = this.getServer().getLogger();
         settings = Settings.getInstance();
         m = Messages.getInstance();
 
@@ -87,13 +93,39 @@ public class AuthMe extends JavaPlugin {
         if (settings.isCachingEnabled()) {
             database = new CacheDataSource(database);
         }
+        PluginManager pm = Bukkit.getServer().getPluginManager();
+
+        if (settings.isUUIDCoreSupportModeEnabled()) {
+            if (pm.getPlugin("UUIDCore") == null) {
+                log.info("}---------------ERROR---------------{");
+                log.info("UUIDCore Support Is Enabled But The Plugin Isn't Present");
+                log.info("Download it at: https://github.com/ModificationStation/UUIDCore");
+                log.info("}---------------ERROR---------------{");
+                log.info("Disabling UUIDCore Support Mode");
+                isUUIDCoreEnabled = false;
+            } else {
+                isUUIDCoreEnabled = true;
+            }
+        }
+        if (settings.isBetaEvolutionsSupportModeEnabled()) {
+            if (pm.getPlugin("EvolutionCore") == null) {
+                log.info("}---------------ERROR---------------{");
+                log.info("Beta Evolutions Support Is Enabled But The Plugin Isn't Present");
+                log.info("Website: https://evolutions.johnymuffin.com");
+                log.info("Plugin: https://github.com/RhysB/Beta-Evolution-Core");
+                log.info("}---------------ERROR---------------{");
+                log.info("Disabling Beta Evolutions Support Mode");
+                isBetaEvolutionsEnabled = false;
+            } else {
+                isBetaEvolutionsEnabled = true;
+            }
+        }
+
 
         AuthMePlayerListener playerListener = new AuthMePlayerListener(this, database);
         AuthMeBlockListener blockListener = new AuthMeBlockListener(database);
         AuthMeEntityListener entityListener = new AuthMeEntityListener(database);
         AuthMeCustomListener customListener = new AuthMeCustomListener(this);
-
-        PluginManager pm = getServer().getPluginManager();
 
         pm.registerEvent(Event.Type.CUSTOM_EVENT, customListener,
                 Priority.Normal, this);
@@ -152,6 +184,14 @@ public class AuthMe extends JavaPlugin {
         ConsoleLogger.info("Authme " + this.getDescription().getVersion() + " disabled");
     }
 
+
+    public boolean isBetaEvolutionsEnabled() {
+        return isBetaEvolutionsEnabled;
+    }
+
+    public boolean isUUIDCoreEnabled() {
+        return isUUIDCoreEnabled;
+    }
 
     public DataSource getAuthDatabase() {
         return database;

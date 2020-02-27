@@ -1,6 +1,7 @@
 package uk.org.whoami.authme.listener;
 
 import com.johnymuffin.beta.evolutioncore.event.PlayerEvolutionAuthEvent;
+import com.johnymuffin.uuidcore.event.PlayerUUIDEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.CustomEventListener;
@@ -17,6 +18,8 @@ import uk.org.whoami.authme.event.callLogin;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 
+import java.util.UUID;
+
 import static com.johnymuffin.beta.evolutioncore.EvolutionAPI.isUserAuthenticatedInCache;
 import static uk.org.whoami.authme.event.callLogin.callLogin;
 
@@ -28,10 +31,10 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
     }
 
     public boolean isClass(String className) {
-        try  {
+        try {
             Class.forName(className);
             return true;
-        }  catch (ClassNotFoundException e) {
+        } catch (ClassNotFoundException e) {
             return false;
         }
     }
@@ -39,7 +42,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
     @Override
     public void onCustomEvent(Event event) {
 
-        if (isClass("com.johnymuffin.beta.evolutioncore.event.PlayerEvolutionAuthEvent") && (event instanceof PlayerEvolutionAuthEvent)) {
+        if (plugin.isBetaEvolutionsEnabled() && (event instanceof PlayerEvolutionAuthEvent)) {
             if (event == null) {
                 ConsoleLogger.showError("Received an event with a null value");
                 return;
@@ -97,8 +100,8 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                 //User isn't authenticated
 
                 //Is kick staff if not authenticated enabled
-                if(Settings.getInstance().isKickNonAuthenticatedStaff()) {
-                    if(player.hasPermission("authme.evolutions.staff") || player.isOp()) {
+                if (Settings.getInstance().isKickNonAuthenticatedStaff()) {
+                    if (player.hasPermission("authme.evolutions.staff") || player.isOp()) {
                         player.kickPlayer(Messages.getInstance()._("notifyUnauthenticatedStaff"));
                         return;
                     }
@@ -120,7 +123,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
 
 
         } else if (event instanceof AuthLoginEvent) {
-            if(event == null || ((AuthLoginEvent) event).getPlayer() == null) {
+            if (event == null || ((AuthLoginEvent) event).getPlayer() == null) {
                 ConsoleLogger.showError("Received an event with a null value");
                 return;
             }
@@ -159,6 +162,33 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
 
 
             }
+
+
+        } else if (plugin.isUUIDCoreEnabled() && event instanceof PlayerUUIDEvent) {
+            if (((PlayerUUIDEvent) event).getPlayer() == null) {
+                return;
+            }
+            //Handle UUID Core Event
+            Player player = ((PlayerUUIDEvent) event).getPlayer();
+            //Check if user is still online
+            if (!((PlayerUUIDEvent) event).getPlayer().isOnline()) {
+                Bukkit.getServer().getLogger().warning("AuthMe received a UUID event for player \"" + ((PlayerUUIDEvent) event).getPlayer().getName() + "\" when the user isn't online");
+                return;
+            }
+            Boolean uuidStatus = ((PlayerUUIDEvent) event).getUUIDStatus();
+
+            //If UUID Fails
+            if (!uuidStatus) {
+                if(Settings.getInstance().isKickOnFailedUUIDEnabled()) {
+                    player.kickPlayer(Messages.getInstance()._("uuidFetchFailedKick"));
+                    return;
+                }
+                if (Settings.getInstance().isMessageOnFailedUUIDEnabled()) {
+                    player.sendMessage(Messages.getInstance()._("uuidFetchFailedMessage"));
+                }
+                return;
+            }
+            UUID playerUUID = ((PlayerUUIDEvent) event).getPlayerUUID();
 
 
         }

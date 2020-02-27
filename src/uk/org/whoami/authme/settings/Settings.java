@@ -73,11 +73,15 @@ public final class Settings extends Configuration {
         getMySQLColumnPassword();
         getMySQLColumnIp();
         getMySQLColumnLastLogin();
+        isBetaEvolutionsSupportModeEnabled();
         isAuthenticatedSkipLoginEnabled();
         isKickNonAuthenticatedEnabled();
         isNotifyNonAuthenticatedEnabled();
         isNotifyNonAuthenticatedOnRegistrationEnabled();
         isKickNonAuthenticatedStaff();
+        isUUIDCoreSupportModeEnabled();
+        isMessageOnFailedUUIDEnabled();
+        isKickOnFailedUUIDEnabled();
         save();
     }
 
@@ -357,6 +361,39 @@ public final class Settings extends Configuration {
         }
         return getBoolean(key, false);
     }
+
+    public boolean isUUIDCoreSupportModeEnabled() {
+        String key = "UUIDCore.supportMode";
+        if (getString(key) == null) {
+            setProperty(key, false);
+        }
+        return getBoolean(key, false);
+    }
+
+    public boolean isBetaEvolutionsSupportModeEnabled() {
+        String key = "betaevolutions.supportMode";
+        if (getString(key) == null) {
+            setProperty(key, true);
+        }
+        return getBoolean(key, true);
+    }
+
+    public boolean isKickOnFailedUUIDEnabled() {
+        String key = "UUIDCore.kickeOnFailedUUID";
+        if (getString(key) == null) {
+            setProperty(key, false);
+        }
+        return getBoolean(key, false);
+    }
+
+    public boolean isMessageOnFailedUUIDEnabled() {
+        String key = "UUIDCore.messageOnFailedUUID";
+        if (getString(key) == null) {
+            setProperty(key, true);
+        }
+        return getBoolean(key, true);
+    }
+
 
 
 
