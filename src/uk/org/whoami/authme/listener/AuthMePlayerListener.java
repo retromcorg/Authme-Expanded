@@ -18,6 +18,7 @@ package uk.org.whoami.authme.listener;
 
 import java.util.Date;
 
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.player.PlayerBedEnterEvent;
@@ -44,6 +45,7 @@ import uk.org.whoami.authme.cache.limbo.LimboPlayer;
 import uk.org.whoami.authme.cache.limbo.LimboCache;
 import uk.org.whoami.authme.citizens.CitizensCommunicator;
 import uk.org.whoami.authme.datasource.DataSource;
+import uk.org.whoami.authme.event.AuthLoginEvent;
 import uk.org.whoami.authme.event.callLogin;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
@@ -247,10 +249,18 @@ public class AuthMePlayerListener extends PlayerListener {
                 long cur = new Date().getTime();
 
                 if (auth.getNickname().equals(name) && auth.getIp().equals(ip) && (cur - lastLogin < timeout || timeout == 0)) {
-                    PlayerCache.getInstance().addPlayer(auth);
-                    player.sendMessage(m._("valid_session"));
-                    callLogin(player, callLogin.Reason.AuthmeSession); // Run Event
-                    return;
+                    //Login Event Start
+                    final AuthLoginEvent loginEvent = new AuthLoginEvent(callLogin.Reason.AuthemeLogin, player);
+                    Bukkit.getServer().getPluginManager().callEvent(loginEvent);
+                    //Login Event End
+
+                    if(!loginEvent.isCancelled()) {
+                        PlayerCache.getInstance().addPlayer(auth);
+                        player.sendMessage(m._("valid_session"));
+                        callLogin(player, callLogin.Reason.AuthmeSession); // Run Event
+                        return;
+                    }
+
                 }
             }
         } else {

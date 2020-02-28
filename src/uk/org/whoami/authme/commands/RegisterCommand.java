@@ -17,6 +17,7 @@
 package uk.org.whoami.authme.commands;
 
 import com.johnymuffin.uuidcore.UUIDAPI;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -28,6 +29,7 @@ import uk.org.whoami.authme.cache.auth.PlayerCache;
 import uk.org.whoami.authme.cache.limbo.LimboCache;
 import uk.org.whoami.authme.cache.limbo.LimboPlayer;
 import uk.org.whoami.authme.datasource.DataSource;
+import uk.org.whoami.authme.event.AuthLoginEvent;
 import uk.org.whoami.authme.event.callLogin;
 import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.settings.Messages;
@@ -99,6 +101,14 @@ public class RegisterCommand implements CommandExecutor {
             return true;
         }
 
+        //Login Event Start
+        final AuthLoginEvent event = new AuthLoginEvent(callLogin.Reason.AuthmeRegister, player);
+        Bukkit.getServer().getPluginManager().callEvent(event);
+        if(event.isCancelled()) {
+            return true;
+        }
+        //Login Event End
+
         try {
             String hash = PasswordSecurity.getHash(settings.getPasswordHash(), args[0]);
 
@@ -123,7 +133,7 @@ public class RegisterCommand implements CommandExecutor {
 
             player.sendMessage(m._("registered"));
             ConsoleLogger.info(player.getDisplayName() + " registered");
-            callLogin(player, callLogin.Reason.AuthmeRegister); // Run Event
+//            callLogin(player, callLogin.Reason.AuthmeRegister); // Run Event
         } catch (NoSuchAlgorithmException ex) {
             ConsoleLogger.showError(ex.getMessage());
             sender.sendMessage(m._("error"));

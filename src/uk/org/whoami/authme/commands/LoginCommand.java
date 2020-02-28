@@ -19,6 +19,7 @@ package uk.org.whoami.authme.commands;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -31,6 +32,7 @@ import uk.org.whoami.authme.cache.auth.PlayerCache;
 import uk.org.whoami.authme.cache.limbo.LimboCache;
 import uk.org.whoami.authme.cache.limbo.LimboPlayer;
 import uk.org.whoami.authme.datasource.DataSource;
+import uk.org.whoami.authme.event.AuthLoginEvent;
 import uk.org.whoami.authme.event.callLogin;
 import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.settings.Messages;
@@ -93,6 +95,13 @@ public class LoginCommand implements CommandExecutor {
 
         try {
             if (PasswordSecurity.comparePasswordWithHash(args[0], hash)) {
+                //Login Event Start
+                final AuthLoginEvent event = new AuthLoginEvent(callLogin.Reason.AuthemeLogin, player);
+                Bukkit.getServer().getPluginManager().callEvent(event);
+                if(event.isCancelled()) {
+                    return true;
+                }
+                //Login Event End
                 PlayerAuth auth = new PlayerAuth(name, hash, ip, new Date().getTime());
                 database.updateSession(auth);
                 PlayerCache.getInstance().addPlayer(auth);
@@ -108,7 +117,7 @@ public class LoginCommand implements CommandExecutor {
                 }
                 player.sendMessage(m._("login"));
                 ConsoleLogger.info(player.getDisplayName() + " logged in!");
-                callLogin(player, callLogin.Reason.AuthemeLogin); // Run Event
+//                callLogin(player, callLogin.Reason.AuthemeLogin); // Run Event
             } else {
                 ConsoleLogger.info(player.getDisplayName() + " used the wrong password");
                 if (settings.isKickOnWrongPasswordEnabled()) {

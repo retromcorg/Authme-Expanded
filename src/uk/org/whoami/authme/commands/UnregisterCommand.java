@@ -16,8 +16,7 @@
 
 package uk.org.whoami.authme.commands;
 
-import java.security.NoSuchAlgorithmException;
-
+import com.johnymuffin.beta.evolutioncore.EvolutionAPI;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -25,7 +24,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
-
 import uk.org.whoami.authme.ConsoleLogger;
 import uk.org.whoami.authme.cache.auth.PlayerCache;
 import uk.org.whoami.authme.cache.limbo.LimboCache;
@@ -35,6 +33,8 @@ import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 import uk.org.whoami.authme.task.MessageTask;
 import uk.org.whoami.authme.task.TimeoutTask;
+
+import java.security.NoSuchAlgorithmException;
 
 public class UnregisterCommand implements CommandExecutor {
 
@@ -67,39 +67,50 @@ public class UnregisterCommand implements CommandExecutor {
             return true;
         }
 
-        if (args.length != 1) {
-            player.sendMessage(m._("usage_unreg"));
-            return true;
-        }
-        try {
-            if (PasswordSecurity.comparePasswordWithHash(args[0], PlayerCache.getInstance().getAuth(name).getHash())) {
-                if (!database.removeAuth(name)) {
-                    player.sendMessage("error");
+        if (!EvolutionAPI.isUserAuthenticatedInCache(player.getName(), player.getAddress().getAddress().getHostAddress())) {
+            //User is not authenticated with BetaEVO
+            if (args.length != 1) {
+                player.sendMessage(m._("usage_unreg"));
+                return true;
+            }
+            //Check if their password is correct
+            try {
+                //If password is incorrect prevent change
+                if (!PasswordSecurity.comparePasswordWithHash(args[0], PlayerCache.getInstance().getAuth(name).getHash())) {
+                    player.sendMessage(m._("wrong_pwd"));
                     return true;
                 }
-                PlayerCache.getInstance().removePlayer(player.getName().toLowerCase());
-                LimboCache.getInstance().addLimboPlayer(player);
-                player.getInventory().setArmorContents(new ItemStack[0]);
-                player.getInventory().setContents(new ItemStack[36]);
-
-                int delay = settings.getRegistrationTimeout() * 20;
-                int interval = settings.getWarnMessageInterval();
-                BukkitScheduler sched = sender.getServer().getScheduler();
-                if (delay != 0) {
-                    int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, name), delay);
-                    LimboCache.getInstance().getLimboPlayer(name).setTimeoutTaskId(id);
-                }
-                sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, name, m._("reg_msg"), interval));
-
-                player.sendMessage("unregistered");
-                ConsoleLogger.info(player.getDisplayName() + " unregistered himself");
-            } else {
-                player.sendMessage(m._("wrong_pwd"));
+            } catch (NoSuchAlgorithmException ex) {
+                ConsoleLogger.showError(ex.getMessage());
+                sender.sendMessage("Internal Error please read the server log");
+                return true;
             }
-        } catch (NoSuchAlgorithmException ex) {
-            ConsoleLogger.showError(ex.getMessage());
-            sender.sendMessage("Internal Error please read the server log");
+        } else {
+            //User is authenticated with Beta EVO
+            ConsoleLogger.info(player.getName() + " Has authenticated an unregister using Beta Evolutions");
         }
+
+        if (!database.removeAuth(name)) {
+            player.sendMessage("error");
+            return true;
+        }
+        PlayerCache.getInstance().removePlayer(player.getName().toLowerCase());
+        LimboCache.getInstance().addLimboPlayer(player);
+        player.getInventory().setArmorContents(new ItemStack[0]);
+        player.getInventory().setContents(new ItemStack[36]);
+
+        int delay = settings.getRegistrationTimeout() * 20;
+        int interval = settings.getWarnMessageInterval();
+        BukkitScheduler sched = sender.getServer().getScheduler();
+        if (delay != 0) {
+            int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, name), delay);
+            LimboCache.getInstance().getLimboPlayer(name).setTimeoutTaskId(id);
+        }
+        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, name, m._("reg_msg"), interval));
+
+        player.sendMessage("unregistered");
+        ConsoleLogger.info(player.getDisplayName() + " unregistered himself");
+
         return true;
     }
 }

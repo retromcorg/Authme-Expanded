@@ -16,7 +16,7 @@ public class AuthLoginEvent extends Event implements Cancellable {
     }
     @Override
     public boolean isCancelled() {
-        return false;
+        return isCancelled;
     }
 
     @Override

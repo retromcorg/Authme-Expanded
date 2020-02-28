@@ -15,9 +15,13 @@ import uk.org.whoami.authme.cache.limbo.LimboCache;
 import uk.org.whoami.authme.cache.limbo.LimboPlayer;
 import uk.org.whoami.authme.event.AuthLoginEvent;
 import uk.org.whoami.authme.event.callLogin;
+import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 
+import java.security.NoSuchAlgorithmException;
+import java.util.Date;
+import java.util.Random;
 import java.util.UUID;
 
 import static com.johnymuffin.beta.evolutioncore.EvolutionAPI.isUserAuthenticatedInCache;
@@ -25,18 +29,34 @@ import static uk.org.whoami.authme.event.callLogin.callLogin;
 
 public class AuthMeCustomListener extends CustomEventListener implements Listener {
     private AuthMe plugin;
+    private Settings settings = Settings.getInstance();
+    private Messages m = Messages.getInstance();
 
     public AuthMeCustomListener(AuthMe plugin) {
         this.plugin = plugin;
     }
 
-    public boolean isClass(String className) {
+    private boolean isClass(String className) {
         try {
             Class.forName(className);
             return true;
         } catch (ClassNotFoundException e) {
             return false;
         }
+    }
+
+    private String getRandomPasswordString() {
+        //Credit = https://stackoverflow.com/a/20536597
+        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890";
+        StringBuilder salt = new StringBuilder();
+        Random rnd = new Random();
+        while (salt.length() < 18) { // length of the random string.
+            int index = (int) (rnd.nextFloat() * SALTCHARS.length());
+            salt.append(SALTCHARS.charAt(index));
+        }
+        String saltStr = salt.toString();
+        return saltStr;
+
     }
 
     @Override
@@ -55,20 +75,50 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
             }
 
             String playerName = player.getName().toLowerCase();
+            String ip = player.getAddress().getAddress().getHostAddress();
             if (((PlayerEvolutionAuthEvent) event).isPlayerAuthenticated()) {
                 //Player is authenticated
                 if (PlayerCache.getInstance().isAuthenticated(playerName)) {
                     //Player is already authenticated with Authme
                     return;
                 }
+
                 //Check if user is brand new
                 if (!plugin.getAuthDatabase().isAuthAvailable(playerName)) {
-                    //User needs to register a password to prevent other cracked users from taking the account
-                    return;
+
+                    //Generate random password to register user
+                    if (settings.isAutoRegisterAuthenticatedEnabled()) {
+                        //Registration is enabled in Authme
+                        if (settings.isRegistrationEnabled()) {
+                            String password = getRandomPasswordString();
+                            try {
+                                //Save a random password for user
+                                String hash = PasswordSecurity.getHash(settings.getPasswordHash(), password);
+                                PlayerAuth auth = new PlayerAuth(playerName, hash, ip, new Date().getTime());
+                                if (!plugin.getAuthDatabase().saveAuth(auth)) {
+                                    ConsoleLogger.showError("Failed to save Auth to database for " + playerName);
+                                    return;
+                                } else {
+                                    ConsoleLogger.info("Generated a random password \"" + password + "\" for: " + playerName);
+                                    player.sendMessage(m._("userAutoRegisteredWithBetaEVO"));
+                                }
+                            } catch (NoSuchAlgorithmException ex) {
+                                ConsoleLogger.showError(ex.getMessage());
+                            }
+                        } else {
+                            //Registration is disabled
+                            player.sendMessage(m._("reg_disabled"));
+                        }
+                    } else {
+                        //User must register a password to claim their account
+                        return;
+                    }
+
+
                 }
 
                 //Check if we should authenticate user
-                if (!Settings.getInstance().isAuthenticatedSkipLoginEnabled()) {
+                if (!settings.isAuthenticatedSkipLoginEnabled()) {
                     return;
                 }
 
@@ -81,7 +131,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                 if (limbo != null) {
                     player.getInventory().setContents(limbo.getInventory());
                     player.getInventory().setArmorContents(limbo.getArmour());
-                    if (Settings.getInstance().isTeleportToSpawnEnabled()) {
+                    if (settings.isTeleportToSpawnEnabled()) {
                         player.teleport(limbo.getLoc());
                     }
                     plugin.getServer().getScheduler().cancelTask(limbo.getTimeoutTaskId());
@@ -100,7 +150,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                 //User isn't authenticated
 
                 //Is kick staff if not authenticated enabled
-                if (Settings.getInstance().isKickNonAuthenticatedStaff()) {
+                if (settings.isKickNonAuthenticatedStaff()) {
                     if (player.hasPermission("authme.evolutions.staff") || player.isOp()) {
                         player.kickPlayer(Messages.getInstance()._("notifyUnauthenticatedStaff"));
                         return;
@@ -108,13 +158,13 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                 }
 
                 //Kick non authenticated
-                if (Settings.getInstance().isKickNonAuthenticatedEnabled()) {
+                if (settings.isKickNonAuthenticatedEnabled()) {
                     //Kick non authenticated users
                     player.kickPlayer(Messages.getInstance()._("unauthenticatedKick"));
                     return;
                 }
                 //Is notify of Beta Evolutions turned on
-                if (Settings.getInstance().isNotifyNonAuthenticatedEnabled()) {
+                if (settings.isNotifyNonAuthenticatedEnabled()) {
                     player.sendMessage(Messages.getInstance()._("notifyUnauthenticated"));
                 }
 
@@ -132,10 +182,10 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
             //Send user on registration Beta Evolution download event
 
             //Check if we already message all unauthenticated evolutions players
-            if (Settings.getInstance().isNotifyNonAuthenticatedEnabled()) {
+            if (settings.isNotifyNonAuthenticatedEnabled()) {
                 return;
             }
-            if (!Settings.getInstance().isNotifyNonAuthenticatedOnRegistrationEnabled()) {
+            if (!settings.isNotifyNonAuthenticatedOnRegistrationEnabled()) {
                 return;
             }
 
@@ -150,7 +200,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                     Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(plugin, new Runnable() {
                         @Override
                         public void run() {
-                            if(!isUserAuthenticatedInCache(player.getName(), ip)) {
+                            if (!isUserAuthenticatedInCache(player.getName(), ip)) {
                                 if (player.isOnline()) {
                                     player.sendMessage(Messages.getInstance()._("notifyUnauthenticated"));
                                 }
@@ -182,11 +232,11 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
             //If UUID Fails
             if (!uuidStatus) {
                 ConsoleLogger.info("User \"" + ((PlayerUUIDEvent) event).getPlayer().getName() + "\" does not have a valid UUID");
-                if(Settings.getInstance().isKickOnFailedUUIDEnabled()) {
+                if (settings.isKickOnFailedUUIDEnabled()) {
                     player.kickPlayer(Messages.getInstance()._("uuidFetchFailedKick"));
                     return;
                 }
-                if (Settings.getInstance().isMessageOnFailedUUIDEnabled()) {
+                if (settings.isMessageOnFailedUUIDEnabled()) {
                     player.sendMessage(Messages.getInstance()._("uuidFetchFailedMessage"));
                 }
                 return;

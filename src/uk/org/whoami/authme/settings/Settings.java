@@ -75,6 +75,7 @@ public final class Settings extends Configuration {
         getMySQLColumnLastLogin();
         isBetaEvolutionsSupportModeEnabled();
         isAuthenticatedSkipLoginEnabled();
+        isAutoRegisterAuthenticatedEnabled();
         isKickNonAuthenticatedEnabled();
         isNotifyNonAuthenticatedEnabled();
         isNotifyNonAuthenticatedOnRegistrationEnabled();
@@ -329,6 +330,15 @@ public final class Settings extends Configuration {
         }
         return getBoolean(key, true);
     }
+
+    public boolean isAutoRegisterAuthenticatedEnabled() {
+        String key = "betaevolutions.authenticated.unregistered.autoRegister";
+        if (getString(key) == null) {
+            setProperty(key, false);
+        }
+        return getBoolean(key, false);
+    }
+
 
     public boolean isKickNonAuthenticatedEnabled() {
         String key = "betaevolutions.unauthenticated.kick";
