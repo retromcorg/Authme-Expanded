@@ -99,7 +99,8 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                                     ConsoleLogger.showError("Failed to save Auth to database for " + playerName);
                                     return;
                                 } else {
-                                    ConsoleLogger.info("Generated a random password \"" + password + "\" for: " + playerName);
+                                    //ConsoleLogger.info("Generated a random password \"" + password + "\" for: " + playerName); - Debug
+                                    ConsoleLogger.info("Generated a random password for \"" + playerName + "\" as they are authenticated with Beta Evolutions");
                                     player.sendMessage(m._("userAutoRegisteredWithBetaEVO"));
                                 }
                             } catch (NoSuchAlgorithmException ex) {
