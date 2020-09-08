@@ -95,18 +95,6 @@ public class AuthMe extends JavaPlugin {
         }
         PluginManager pm = Bukkit.getServer().getPluginManager();
 
-        if (settings.isUUIDCoreSupportModeEnabled()) {
-            if (pm.getPlugin("UUIDCore") == null) {
-                log.info("}---------------ERROR---------------{");
-                log.info("UUIDCore Support Is Enabled But The Plugin Isn't Present");
-                log.info("Download it at: https://github.com/ModificationStation/UUIDCore");
-                log.info("}---------------ERROR---------------{");
-                log.info("Disabling UUIDCore Support Mode");
-                isUUIDCoreEnabled = false;
-            } else {
-                isUUIDCoreEnabled = true;
-            }
-        }
         if (settings.isBetaEvolutionsSupportModeEnabled()) {
             if (pm.getPlugin("EvolutionCore") == null) {
                 log.info("}---------------ERROR---------------{");

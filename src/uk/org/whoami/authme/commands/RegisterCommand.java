@@ -16,7 +16,6 @@
 
 package uk.org.whoami.authme.commands;
 
-import com.johnymuffin.uuidcore.UUIDAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -38,8 +37,6 @@ import uk.org.whoami.authme.settings.Settings;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
 import java.util.UUID;
-
-import static uk.org.whoami.authme.event.callLogin.callLogin;
 
 public class RegisterCommand implements CommandExecutor {
 
@@ -68,19 +65,6 @@ public class RegisterCommand implements CommandExecutor {
         String name = player.getName().toLowerCase();
         String ip = player.getAddress().getAddress().getHostAddress();
 
-        if (plugin.isUUIDCoreEnabled()) {
-            UUID playerUUID = UUIDAPI.getUserUUID(name, false);
-            if (playerUUID == null) {
-                //See if player without a UUID can register
-                if (!Settings.getInstance().isAllowUUIDFailedToRegisterEnabled()) {
-                    //No UUID is known for the player
-                    player.sendMessage(m._("uuidFailedRegisterError"));
-                    return true;
-                }
-            }
-        }
-
-
         if (PlayerCache.getInstance().isAuthenticated(name)) {
             player.sendMessage(m._("logged_in"));
             return true;
@@ -104,7 +88,7 @@ public class RegisterCommand implements CommandExecutor {
         //Login Event Start
         final AuthLoginEvent event = new AuthLoginEvent(callLogin.Reason.AuthmeRegister, player);
         Bukkit.getServer().getPluginManager().callEvent(event);
-        if(event.isCancelled()) {
+        if (event.isCancelled()) {
             return true;
         }
         //Login Event End

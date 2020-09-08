@@ -16,15 +16,14 @@
 
 package uk.org.whoami.authme.settings;
 
-import java.io.File;
-
 import org.bukkit.util.config.Configuration;
-
 import uk.org.whoami.authme.ConsoleLogger;
 import uk.org.whoami.authme.datasource.DataSource;
 import uk.org.whoami.authme.datasource.DataSource.DataSourceType;
 import uk.org.whoami.authme.security.PasswordSecurity;
 import uk.org.whoami.authme.security.PasswordSecurity.HashAlgorithm;
+
+import java.io.File;
 
 public final class Settings extends Configuration {
 
@@ -80,7 +79,6 @@ public final class Settings extends Configuration {
         isNotifyNonAuthenticatedEnabled();
         isNotifyNonAuthenticatedOnRegistrationEnabled();
         isKickNonAuthenticatedStaff();
-        isUUIDCoreSupportModeEnabled();
         isMessageOnFailedUUIDEnabled();
         isKickOnFailedUUIDEnabled();
         isAllowUUIDFailedToRegisterEnabled();
@@ -373,13 +371,6 @@ public final class Settings extends Configuration {
         return getBoolean(key, false);
     }
 
-    public boolean isUUIDCoreSupportModeEnabled() {
-        String key = "UUIDCore.supportMode";
-        if (getString(key) == null) {
-            setProperty(key, false);
-        }
-        return getBoolean(key, false);
-    }
 
     public boolean isBetaEvolutionsSupportModeEnabled() {
         String key = "betaevolutions.supportMode";
@@ -412,8 +403,6 @@ public final class Settings extends Configuration {
         }
         return getBoolean(key, false);
     }
-
-
 
 
     public static Settings getInstance() {

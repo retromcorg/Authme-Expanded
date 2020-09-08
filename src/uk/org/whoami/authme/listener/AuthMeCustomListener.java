@@ -1,7 +1,6 @@
 package uk.org.whoami.authme.listener;
 
 import com.johnymuffin.beta.evolutioncore.event.PlayerEvolutionAuthEvent;
-import com.johnymuffin.uuidcore.event.PlayerUUIDEvent;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.CustomEventListener;
@@ -215,34 +214,6 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
 
 
             }
-
-
-        } else if (plugin.isUUIDCoreEnabled() && event instanceof PlayerUUIDEvent) {
-            if (((PlayerUUIDEvent) event).getPlayer() == null) {
-                return;
-            }
-            //Handle UUID Core Event
-            Player player = ((PlayerUUIDEvent) event).getPlayer();
-            //Check if user is still online
-            if (!((PlayerUUIDEvent) event).getPlayer().isOnline()) {
-                Bukkit.getServer().getLogger().warning("AuthMe received a UUID event for player \"" + ((PlayerUUIDEvent) event).getPlayer().getName() + "\" when the user isn't online");
-                return;
-            }
-            Boolean uuidStatus = ((PlayerUUIDEvent) event).getUUIDStatus();
-
-            //If UUID Fails
-            if (!uuidStatus) {
-                ConsoleLogger.info("User \"" + ((PlayerUUIDEvent) event).getPlayer().getName() + "\" does not have a valid UUID");
-                if (settings.isKickOnFailedUUIDEnabled()) {
-                    player.kickPlayer(Messages.getInstance()._("uuidFetchFailedKick"));
-                    return;
-                }
-                if (settings.isMessageOnFailedUUIDEnabled()) {
-                    player.sendMessage(Messages.getInstance()._("uuidFetchFailedMessage"));
-                }
-                return;
-            }
-            UUID playerUUID = ((PlayerUUIDEvent) event).getPlayerUUID();
 
 
         }
