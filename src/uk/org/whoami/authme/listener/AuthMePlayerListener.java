@@ -17,7 +17,11 @@
 package uk.org.whoami.authme.listener;
 
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
+import com.johnymuffin.beta.evolutioncore.EvolutionAPI;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -39,6 +43,8 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
+import uk.org.whoami.authme.AuthMe;
+import uk.org.whoami.authme.ConsoleLogger;
 import uk.org.whoami.authme.cache.auth.PlayerAuth;
 import uk.org.whoami.authme.cache.auth.PlayerCache;
 import uk.org.whoami.authme.cache.limbo.LimboPlayer;
@@ -58,10 +64,10 @@ public class AuthMePlayerListener extends PlayerListener {
 
     private Settings settings = Settings.getInstance();
     private Messages m = Messages.getInstance();
-    private JavaPlugin plugin;
+    private AuthMe plugin;
     private DataSource data;
 
-    public AuthMePlayerListener(JavaPlugin plugin, DataSource data) {
+    public AuthMePlayerListener(AuthMe plugin, DataSource data) {
         this.plugin = plugin;
         this.data = data;
     }
@@ -112,6 +118,16 @@ public class AuthMePlayerListener extends PlayerListener {
 
         Player player = event.getPlayer();
         String name = player.getName().toLowerCase();
+
+        //HOTFIX - Start
+        if (PlayerCache.getInstance().isAuthenticated(name)) {
+            return;
+        }
+
+        event.getRecipients().clear();
+        event.setCancelled(true);
+        player.sendMessage(m._("login_msg"));
+        //HOTFIX - End
 
         if (CitizensCommunicator.isNPC(player)) {
             return;
@@ -175,8 +191,8 @@ public class AuthMePlayerListener extends PlayerListener {
         Location to = event.getTo();
 
         if (to.getX() > spawn.getX() + radius || to.getX() < spawn.getX() - radius ||
-            to.getY() > spawn.getY() + radius || to.getY() < spawn.getY() - radius ||
-            to.getZ() > spawn.getZ() + radius || to.getZ() < spawn.getZ() - radius) {
+                to.getY() > spawn.getY() + radius || to.getY() < spawn.getY() - radius ||
+                to.getZ() > spawn.getZ() + radius || to.getZ() < spawn.getZ() - radius) {
             event.setTo(event.getFrom());
         }
     }
@@ -189,6 +205,36 @@ public class AuthMePlayerListener extends PlayerListener {
 
         Player player = event.getPlayer();
         String name = player.getName().toLowerCase();
+
+
+        //TODO: A bunch of this stuff should only be run if Poseidon is present.
+
+        //Beta EVO Staff Check
+        if (plugin.isRunningPoseidon()) {
+            if (settings.isKickNonAuthenticatedStaff()) {
+                if (player.hasPermission("authme.evolutions.staff") || player.isOp()) {
+                    if (!EvolutionAPI.isUserAuthenticatedInCache(event.getPlayer().getName(), event.getAddress().getHostAddress())) {
+                        event.setKickMessage(Messages.getInstance()._("notifyUnauthenticatedStaff"));
+                        event.setResult(Result.KICK_OTHER);
+                        return;
+                    }
+                }
+            }
+            if (settings.isKickNonAuthenticatedEnabled() && !EvolutionAPI.isUserAuthenticatedInCache(event.getPlayer().getName(), event.getAddress().getHostAddress())) {
+                //PLayers without BetaEVO should be kicked
+                if (settings.isAllowRegisteredNonAuthenticatedBypassEnabled() && plugin.getAuthDatabase().isAuthAvailable(name)) {
+                    ConsoleLogger.info(player.getName() + " Has been allowed to join as they are registered, and the registered bypass for BetaEVO is activated.");
+                } else {
+                    event.setKickMessage(Messages.getInstance()._("unauthenticatedKick"));
+                    event.setResult(Result.KICK_OTHER);
+                    return;
+                }
+
+            }
+
+        }
+        //Beta Evo Staff Check
+
 
         if (CitizensCommunicator.isNPC(player)) {
             return;
@@ -254,7 +300,7 @@ public class AuthMePlayerListener extends PlayerListener {
                     Bukkit.getServer().getPluginManager().callEvent(loginEvent);
                     //Login Event End
 
-                    if(!loginEvent.isCancelled()) {
+                    if (!loginEvent.isCancelled()) {
                         PlayerCache.getInstance().addPlayer(auth);
                         player.sendMessage(m._("valid_session"));
                         callLogin(player, callLogin.Reason.AuthmeSession); // Run Event

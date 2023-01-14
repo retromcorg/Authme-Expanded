@@ -82,6 +82,7 @@ public final class Settings extends Configuration {
         isMessageOnFailedUUIDEnabled();
         isKickOnFailedUUIDEnabled();
         isAllowUUIDFailedToRegisterEnabled();
+        isAllowRegisteredNonAuthenticatedBypassEnabled();
         save();
     }
 
@@ -340,6 +341,19 @@ public final class Settings extends Configuration {
 
     public boolean isKickNonAuthenticatedEnabled() {
         String key = "betaevolutions.unauthenticated.kick";
+        if (getString(key) == null) {
+            setProperty(key, false);
+        }
+        return getBoolean(key, false);
+    }
+
+    public void setKickNonAuthenticatedEnabled(boolean value) {
+        setProperty("betaevolutions.unauthenticated.kick", value);
+        this.save();
+    }
+
+    public boolean isAllowRegisteredNonAuthenticatedBypassEnabled() {
+        String key = "betaevolutions.unauthenticated.registered-nonauthenticated-bypass";
         if (getString(key) == null) {
             setProperty(key, false);
         }

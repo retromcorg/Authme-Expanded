@@ -2,7 +2,7 @@ name: AuthMe
 author: whoami
 description: AuthMe prevents people, which aren't logged in, from doing stuff like placing blocks, moving, typing commands or seeing the inventory of the current player.
 main: uk.org.whoami.authme.AuthMe
-version: 3.6.0
+version: 3.6.3
 softdepend: [EvolutionCore]
 commands:
     register:
@@ -22,7 +22,7 @@ commands:
         usage: /unregister password
     authme:
         description: AuthMe op commands
-        usage: '/authme reload|register playername password|changepassword playername password|unregister playername'
+        usage: '/authme reload|register playername password|changepassword playername password|unregister playername|betaevo'
 permissions:
     authme.*:
         description: Gives access to all authme commands
@@ -41,6 +41,7 @@ permissions:
              authme.admin.unregister: true
              authme.admin.purge: true
              authme.evolutions.staff: true
+             authme.admin.betaevo: true
 #    authme.evolutions.staff:
 #        description: Require user to have Beta Evolutions
     authme.register:

@@ -36,7 +36,6 @@ import uk.org.whoami.authme.settings.Settings;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
-import java.util.UUID;
 
 public class RegisterCommand implements CommandExecutor {
 
@@ -117,7 +116,7 @@ public class RegisterCommand implements CommandExecutor {
 
             player.sendMessage(m._("registered"));
             ConsoleLogger.info(player.getDisplayName() + " registered");
-//            callLogin(player, callLogin.Reason.AuthmeRegister); // Run Event
+            player.teleport(player.getWorld().getSpawnLocation());
         } catch (NoSuchAlgorithmException ex) {
             ConsoleLogger.showError(ex.getMessage());
             sender.sendMessage(m._("error"));

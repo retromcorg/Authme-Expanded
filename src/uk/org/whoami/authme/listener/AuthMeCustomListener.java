@@ -158,17 +158,23 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                 }
 
                 //Kick non authenticated
-                if (settings.isKickNonAuthenticatedEnabled()) {
-                    //Kick non authenticated users
-                    player.kickPlayer(Messages.getInstance()._("unauthenticatedKick"));
-                    return;
-                }
-                //Is notify of Beta Evolutions turned on
-                if (settings.isNotifyNonAuthenticatedEnabled()) {
-                    player.sendMessage(Messages.getInstance()._("notifyUnauthenticated"));
-                }
 
+                if (!plugin.isRunningPoseidon()) {
+                    if (settings.isKickNonAuthenticatedEnabled()) {
+                        if (settings.isAllowRegisteredNonAuthenticatedBypassEnabled() && plugin.getAuthDatabase().isAuthAvailable(playerName)) {
+                        ConsoleLogger.info(player.getName() + " Has been allowed to join as they are registered, and the registered bypass for BetaEVO is activated.");
+                        } else {
+                            //Kick non authenticated users
+                            player.kickPlayer(Messages.getInstance()._("unauthenticatedKick"));
+                            return;
+                        }
+                    }
+                    //Is notify of Beta Evolutions turned on
+                    if (settings.isNotifyNonAuthenticatedEnabled()) {
+                        player.sendMessage(Messages.getInstance()._("notifyUnauthenticated"));
+                    }
 
+                }
             }
 
 

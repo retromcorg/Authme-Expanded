@@ -33,10 +33,7 @@ import uk.org.whoami.authme.datasource.DataSource;
 import uk.org.whoami.authme.datasource.FileDataSource;
 import uk.org.whoami.authme.datasource.MiniConnectionPoolManager.TimeoutException;
 import uk.org.whoami.authme.datasource.MySQLDataSource;
-import uk.org.whoami.authme.listener.AuthMeBlockListener;
-import uk.org.whoami.authme.listener.AuthMeCustomListener;
-import uk.org.whoami.authme.listener.AuthMeEntityListener;
-import uk.org.whoami.authme.listener.AuthMePlayerListener;
+import uk.org.whoami.authme.listener.*;
 import uk.org.whoami.authme.settings.Messages;
 import uk.org.whoami.authme.settings.Settings;
 import uk.org.whoami.authme.task.MessageTask;
@@ -54,6 +51,7 @@ public class AuthMe extends JavaPlugin {
     private Messages m;
     private boolean isUUIDCoreEnabled;
     private boolean isBetaEvolutionsEnabled;
+    private boolean runningPoseidon = false;
 
     @Override
     public void onEnable() {
@@ -109,6 +107,13 @@ public class AuthMe extends JavaPlugin {
             }
         }
 
+        if (testClassExistence("com.projectposeidon.api.PoseidonUUID")) {
+            runningPoseidon = true;
+            log.info("Project Poseidon detected, advanced support enabled.");
+        } else {
+            log.info("Project Poseidon support disabled.");
+        }
+
 
         AuthMePlayerListener playerListener = new AuthMePlayerListener(this, database);
         AuthMeBlockListener blockListener = new AuthMeBlockListener(database);
@@ -121,6 +126,7 @@ public class AuthMe extends JavaPlugin {
                 Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_CHAT, playerListener,
                 Priority.Lowest, this);
+        pm.registerEvent(Event.Type.PLAYER_CHAT, new AuthMeChat(), Priority.Highest, this);
         pm.registerEvent(Event.Type.PLAYER_MOVE, playerListener,
                 Priority.Lowest, this);
         pm.registerEvent(Event.Type.PLAYER_LOGIN, playerListener,
@@ -226,5 +232,19 @@ public class AuthMe extends JavaPlugin {
             }
             sched.scheduleSyncDelayedTask(this, new MessageTask(this, name, msg, msgInterval));
         }
+    }
+
+
+    private boolean testClassExistence(String className) {
+        try {
+            Class.forName(className);
+            return true;
+        } catch (ClassNotFoundException e) {
+            return false;
+        }
+    }
+
+    public boolean isRunningPoseidon() {
+        return runningPoseidon;
     }
 }

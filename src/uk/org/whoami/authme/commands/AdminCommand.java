@@ -44,7 +44,7 @@ public class AdminCommand implements CommandExecutor {
     @Override
     public boolean onCommand(CommandSender sender, Command cmnd, String label, String[] args) {
         if (args.length == 0) {
-            sender.sendMessage("Usage: /authme reload|register playername password|changepassword playername password|unregister playername|purge");
+            sender.sendMessage("Usage: /authme reload|register playername password|changepassword playername password|unregister playername|purge|betaevo");
             return true;
         }
 
@@ -74,6 +74,17 @@ public class AdminCommand implements CommandExecutor {
             settings.reload();
             m.reload();
             sender.sendMessage(m._("reload"));
+        } else if (args[0].equalsIgnoreCase("betaevo")) {
+            boolean betaEVO = settings.isKickNonAuthenticatedEnabled();
+
+            if (betaEVO) {
+                settings.setKickNonAuthenticatedEnabled(false);
+                sender.sendMessage("BetaEVO mode disabled");
+            } else {
+                settings.setKickNonAuthenticatedEnabled(true);
+                sender.sendMessage("BetaEVO mode enabled");
+            }
+            ConsoleLogger.info("BetaEVO mode " + (betaEVO ? "disabled" : "enabled") + " by " + sender.getName());
         } else if (args[0].equalsIgnoreCase("register")) {
             if (args.length != 3) {
                 sender.sendMessage("Usage: /authme register playername password");
