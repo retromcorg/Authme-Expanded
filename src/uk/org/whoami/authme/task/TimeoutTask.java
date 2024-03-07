@@ -51,6 +51,7 @@ public class TimeoutTask implements Runnable {
                     LimboPlayer inv = LimboCache.getInstance().getLimboPlayer(name);
                     player.getInventory().setArmorContents(inv.getArmour());
                     player.getInventory().setContents(inv.getInventory());
+                    player.teleport(inv.getLoc());
                     LimboCache.getInstance().deleteLimboPlayer(name);
                 }
                 player.kickPlayer(m._("timeout"));
