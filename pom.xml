@@ -69,6 +69,12 @@
             <version>1.1.8</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.johnymuffin.beta</groupId>
+            <artifactId>evolutioncore</artifactId>
+            <version>1.3.1</version>
+        </dependency>
+
     </dependencies>
 
 </project>
