@@ -18,24 +18,34 @@ package uk.org.whoami.authme.cache.auth;
 
 public class PlayerAuth {
 
-    private String nickname;
+    private final String uuid;
+    private String username;
     private String hash;
     private String ip;
     private long lastLogin;
 
-    public PlayerAuth(String nickname, String hash, String ip, long lastLogin) {
-        this.nickname = nickname;
+    public PlayerAuth(String uuid, String username, String hash, String ip, long lastLogin) {
+        this.uuid = uuid;
+        this.username = username;
         this.hash = hash;
         this.ip = ip;
         this.lastLogin = lastLogin;
     }
 
-    public String getIp() {
-        return ip;
+    public String getUuid() {
+        return uuid;
     }
 
-    public String getNickname() {
-        return nickname;
+    public String getUsername() {
+        return username;
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+    }
+
+    public String getIp() {
+        return ip;
     }
 
     public String getHash() {
@@ -64,14 +74,14 @@ public class PlayerAuth {
             return false;
         }
         PlayerAuth other = (PlayerAuth) obj;
-        
-        return other.getIp().equals(this.ip) && other.getNickname().equals(this.nickname);
+
+        return other.getIp().equals(this.ip) && other.getUuid().equals(this.uuid);
     }
 
     @Override
     public int hashCode() {
         int hashCode = 7;
-        hashCode = 71 * hashCode + (this.nickname != null ? this.nickname.hashCode() : 0);
+        hashCode = 71 * hashCode + (this.uuid != null ? this.uuid.hashCode() : 0);
         hashCode = 71 * hashCode + (this.ip != null ? this.ip.hashCode() : 0);
         return hashCode;
     }

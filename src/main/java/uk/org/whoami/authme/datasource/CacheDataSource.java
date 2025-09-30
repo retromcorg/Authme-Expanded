@@ -30,17 +30,19 @@ public class CacheDataSource implements DataSource {
     }
 
     @Override
-    public synchronized boolean isAuthAvailable(String user) {
-        return cache.containsKey(user) ? true : source.isAuthAvailable(user);
+    public synchronized boolean isAuthAvailable(String uuid) {
+        return cache.containsKey(uuid) ? true : source.isAuthAvailable(uuid);
     }
 
     @Override
-    public synchronized PlayerAuth getAuth(String user) {
-        if(cache.containsKey(user)) {
-            return cache.get(user);
+    public synchronized PlayerAuth getAuth(String uuid) {
+        if (cache.containsKey(uuid)) {
+            return cache.get(uuid);
         } else {
-            PlayerAuth auth = source.getAuth(user);
-            cache.put(user, auth);
+            PlayerAuth auth = source.getAuth(uuid);
+            if (auth != null) {
+                cache.put(uuid, auth);
+            }
             return auth;
         }
     }
@@ -48,7 +50,7 @@ public class CacheDataSource implements DataSource {
     @Override
     public synchronized boolean saveAuth(PlayerAuth auth) {
         if (source.saveAuth(auth)) {
-            cache.put(auth.getNickname(), auth);
+            cache.put(auth.getUuid(), auth);
             return true;
         }
         return false;
@@ -57,7 +59,7 @@ public class CacheDataSource implements DataSource {
     @Override
     public synchronized boolean updatePassword(PlayerAuth auth) {
         if (source.updatePassword(auth)) {
-            cache.get(auth.getNickname()).setHash(auth.getHash());
+            cache.get(auth.getUuid()).setHash(auth.getHash());
             return true;
         }
         return false;
@@ -66,8 +68,12 @@ public class CacheDataSource implements DataSource {
     @Override
     public boolean updateSession(PlayerAuth auth) {
         if (source.updateSession(auth)) {
-            cache.get(auth.getNickname()).setIp(auth.getIp());
-            cache.get(auth.getNickname()).setLastLogin(auth.getLastLogin());
+            PlayerAuth cached = cache.get(auth.getUuid());
+            if (cached != null) {
+                cached.setUsername(auth.getUsername());
+                cached.setIp(auth.getIp());
+                cached.setLastLogin(auth.getLastLogin());
+            }
             return true;
         }
         return false;
@@ -78,9 +84,10 @@ public class CacheDataSource implements DataSource {
         int cleared = source.purgeDatabase(until);
 
         if (cleared > 0) {
-            for (PlayerAuth auth : cache.values()) {
-                if(auth.getLastLogin() < until) {
-                    cache.remove(auth.getNickname());
+            HashMap<String, PlayerAuth> copy = new HashMap<String, PlayerAuth>(cache);
+            for (PlayerAuth auth : copy.values()) {
+                if (auth.getLastLogin() < until) {
+                    cache.remove(auth.getUuid());
                 }
             }
         }
@@ -88,9 +95,9 @@ public class CacheDataSource implements DataSource {
     }
 
     @Override
-    public synchronized boolean removeAuth(String user) {
-        if (source.removeAuth(user)) {
-            cache.remove(user);
+    public synchronized boolean removeAuth(String uuid) {
+        if (source.removeAuth(uuid)) {
+            cache.remove(uuid);
             return true;
         }
         return false;

@@ -62,6 +62,7 @@ public class LoginCommand implements CommandExecutor {
         }
 
         Player player = (Player) sender;
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
         String ip = player.getAddress().getAddress().getHostAddress();
 
@@ -76,7 +77,7 @@ public class LoginCommand implements CommandExecutor {
         }
 
 
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             player.sendMessage(m._("logged_in"));
             return true;
         }
@@ -86,12 +87,17 @@ public class LoginCommand implements CommandExecutor {
             return true;
         }
 
-        if (!database.isAuthAvailable(player.getName().toLowerCase())) {
+        if (!database.isAuthAvailable(uuid)) {
             player.sendMessage(m._("user_unknown"));
             return true;
         }
-        
-        String hash = database.getAuth(name).getHash();
+
+        PlayerAuth authData = database.getAuth(uuid);
+        if (authData == null) {
+            player.sendMessage(m._("user_unknown"));
+            return true;
+        }
+        String hash = authData.getHash();
 
         try {
             if (PasswordSecurity.comparePasswordWithHash(args[0], hash)) {
@@ -102,10 +108,10 @@ public class LoginCommand implements CommandExecutor {
                     return true;
                 }
                 //Login Event End
-                PlayerAuth auth = new PlayerAuth(name, hash, ip, new Date().getTime());
+                PlayerAuth auth = new PlayerAuth(uuid, name, hash, ip, new Date().getTime());
                 database.updateSession(auth);
                 PlayerCache.getInstance().addPlayer(auth);
-                LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(name);
+                LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(uuid);
                 if (limbo != null) {
                     player.getInventory().setContents(limbo.getInventory());
                     player.getInventory().setArmorContents(limbo.getArmour());
@@ -113,7 +119,7 @@ public class LoginCommand implements CommandExecutor {
                         player.teleport(limbo.getLoc());
                     }
                     sender.getServer().getScheduler().cancelTask(limbo.getTimeoutTaskId());
-                    LimboCache.getInstance().deleteLimboPlayer(name);
+                    LimboCache.getInstance().deleteLimboPlayer(uuid);
                 }
                 player.sendMessage(m._("login"));
                 ConsoleLogger.info(player.getDisplayName() + " logged in!");

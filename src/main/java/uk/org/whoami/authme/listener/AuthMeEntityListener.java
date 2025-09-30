@@ -51,13 +51,13 @@ public class AuthMeEntityListener extends EntityListener {
         }
 
         Player player = (Player) entity;
-        String name = player.getName().toLowerCase();
+        String uuid = player.getUniqueId().toString();
 
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (!data.isAuthAvailable(name)) {
+        if (!data.isAuthAvailable(uuid)) {
             if (!settings.isForcedRegistrationEnabled()) {
                 return;
             }
@@ -78,13 +78,13 @@ public class AuthMeEntityListener extends EntityListener {
         }
 
         Player player = (Player) entity;
-        String name = player.getName().toLowerCase();
+        String uuid = player.getUniqueId().toString();
 
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (!data.isAuthAvailable(name)) {
+        if (!data.isAuthAvailable(uuid)) {
             if (!settings.isForcedRegistrationEnabled()) {
                 return;
             }

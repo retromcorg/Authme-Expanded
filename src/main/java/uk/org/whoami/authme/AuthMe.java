@@ -193,15 +193,17 @@ public class AuthMe extends JavaPlugin {
 
     private void onReload(Player[] players) {
         for (Player player : players) {
+            String uuid = player.getUniqueId().toString();
             String name = player.getName().toLowerCase();
             String ip = player.getAddress().getAddress().getHostAddress();
 
-            boolean authAvail = database.isAuthAvailable(name);
+            boolean authAvail = database.isAuthAvailable(uuid);
 
             if (authAvail) {
                 if (settings.isSessionsEnabled()) {
-                    PlayerAuth auth = database.getAuth(name);
-                    if (auth.getNickname().equals(name) && auth.getIp().equals(ip)) {
+                    PlayerAuth auth = database.getAuth(uuid);
+                    if (auth != null && auth.getUuid().equals(uuid) && auth.getIp().equals(ip)) {
+                        auth.setUsername(name);
                         PlayerCache.getInstance().addPlayer(auth);
                         player.sendMessage(m._("valid_session"));
                         break;
@@ -227,10 +229,10 @@ public class AuthMe extends JavaPlugin {
             int msgInterval = settings.getWarnMessageInterval();
             BukkitScheduler sched = this.getServer().getScheduler();
             if (time != 0) {
-                int id = sched.scheduleSyncDelayedTask(this, new TimeoutTask(this, name), time);
-                LimboCache.getInstance().getLimboPlayer(name).setTimeoutTaskId(id);
+                int id = sched.scheduleSyncDelayedTask(this, new TimeoutTask(this, uuid), time);
+                LimboCache.getInstance().getLimboPlayer(uuid).setTimeoutTaskId(id);
             }
-            sched.scheduleSyncDelayedTask(this, new MessageTask(this, name, msg, msgInterval));
+            sched.scheduleSyncDelayedTask(this, new MessageTask(this, uuid, msg, msgInterval));
         }
     }
 

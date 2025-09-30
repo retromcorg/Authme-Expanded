@@ -53,10 +53,11 @@ public class ChangePasswordCommand implements CommandExecutor {
         }
 
         Player player = (Player) sender;
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
         String ip = player.getAddress().getAddress().getHostAddress();
 
-        if (!PlayerCache.getInstance().isAuthenticated(name)) {
+        if (!PlayerCache.getInstance().isAuthenticated(uuid)) {
             player.sendMessage(m._("not_logged_in"));
             return true;
         }
@@ -69,9 +70,10 @@ public class ChangePasswordCommand implements CommandExecutor {
         try {
             String hashnew = PasswordSecurity.getHash(settings.getPasswordHash(), args[1]);
 
-            if (PasswordSecurity.comparePasswordWithHash(args[0], PlayerCache.getInstance().getAuth(name).getHash())) {
-                PlayerAuth auth = PlayerCache.getInstance().getAuth(name);
+            if (PasswordSecurity.comparePasswordWithHash(args[0], PlayerCache.getInstance().getAuth(uuid).getHash())) {
+                PlayerAuth auth = PlayerCache.getInstance().getAuth(uuid);
                 auth.setHash(hashnew);
+                auth.setUsername(name);
                 if (!database.updatePassword(auth)) {
                     player.sendMessage(m._("error"));
                     return true;

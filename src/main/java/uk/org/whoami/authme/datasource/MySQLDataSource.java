@@ -37,7 +37,8 @@ public class MySQLDataSource implements DataSource {
     private String password;
     private String database;
     private String tableName;
-    private String columnName;
+    private String columnUuid;
+    private String columnUsername;
     private String columnPassword;
     private String columnIp;
     private String columnLastLogin;
@@ -52,7 +53,8 @@ public class MySQLDataSource implements DataSource {
 
         this.database = s.getMySQLDatabase();
         this.tableName = s.getMySQLTablename();
-        this.columnName = s.getMySQLColumnName();
+        this.columnUuid = s.getMySQLColumnUuid();
+        this.columnUsername = s.getMySQLColumnUsername();
         this.columnPassword = s.getMySQLColumnPassword();
         this.columnIp = s.getMySQLColumnIp();
         this.columnLastLogin = s.getMySQLColumnLastLogin();
@@ -84,11 +86,27 @@ public class MySQLDataSource implements DataSource {
             st = con.createStatement();
             st.executeUpdate("CREATE TABLE IF NOT EXISTS " + tableName + " ("
                     + "id INTEGER AUTO_INCREMENT,"
-                    + columnName + " VARCHAR(255) NOT NULL,"
+                    + columnUuid + " VARCHAR(36) NOT NULL,"
+                    + columnUsername + " VARCHAR(255) NOT NULL,"
                     + columnPassword + " VARCHAR(255) NOT NULL,"
                     + columnIp + " VARCHAR(40) NOT NULL,"
                     + columnLastLogin + " BIGINT,"
-                    + "CONSTRAINT table_const_prim PRIMARY KEY (id));");
+                    + "CONSTRAINT table_const_prim PRIMARY KEY (id),"
+                    + "UNIQUE (" + columnUuid + "));");
+
+            rs = con.getMetaData().getColumns(null, null, tableName, columnUuid);
+            if (!rs.next()) {
+                st.executeUpdate("ALTER TABLE " + tableName + " ADD COLUMN "
+                        + columnUuid + " VARCHAR(36) NOT NULL;");
+            }
+            close(rs);
+
+            rs = con.getMetaData().getColumns(null, null, tableName, columnUsername);
+            if (!rs.next()) {
+                st.executeUpdate("ALTER TABLE " + tableName + " ADD COLUMN "
+                        + columnUsername + " VARCHAR(255) NOT NULL;");
+            }
+            close(rs);
 
             rs = con.getMetaData().getColumns(null, null, tableName, columnIp);
             if (!rs.next()) {
@@ -101,6 +119,10 @@ public class MySQLDataSource implements DataSource {
                 st.executeUpdate("ALTER TABLE " + tableName + " ADD COLUMN "
                         + columnLastLogin + " BIGINT;");
             }
+            try {
+                st.executeUpdate("ALTER TABLE " + tableName + " ADD UNIQUE (" + columnUuid + ");");
+            } catch (SQLException ignore) {
+            }
         } finally {
             close(rs);
             close(st);
@@ -110,15 +132,15 @@ public class MySQLDataSource implements DataSource {
     }
 
     @Override
-    public synchronized boolean isAuthAvailable(String user) {
+    public synchronized boolean isAuthAvailable(String uuid) {
         Connection con = null;
         PreparedStatement pst = null;
         ResultSet rs = null;
         try {
             con = conPool.getValidConnection();
             pst = con.prepareStatement("SELECT * FROM " + tableName + " WHERE "
-                    + columnName + "=?;");
-            pst.setString(1, user);
+                    + columnUuid + "=?;");
+            pst.setString(1, uuid);
             rs = pst.executeQuery();
             return rs.next();
         } catch (SQLException ex) {
@@ -135,21 +157,21 @@ public class MySQLDataSource implements DataSource {
     }
 
     @Override
-    public synchronized PlayerAuth getAuth(String user) {
+    public synchronized PlayerAuth getAuth(String uuid) {
         Connection con = null;
         PreparedStatement pst = null;
         ResultSet rs = null;
         try {
             con = conPool.getValidConnection();
             pst = con.prepareStatement("SELECT * FROM " + tableName + " WHERE "
-                    + columnName + "=?;");
-            pst.setString(1, user);
+                    + columnUuid + "=?;");
+            pst.setString(1, uuid);
             rs = pst.executeQuery();
             if (rs.next()) {
                 if (rs.getString(columnIp).isEmpty()) {
-                    return new PlayerAuth(rs.getString(columnName), rs.getString(columnPassword), "198.18.0.1", rs.getLong(columnLastLogin));
+                    return new PlayerAuth(rs.getString(columnUuid), rs.getString(columnUsername), rs.getString(columnPassword), "198.18.0.1", rs.getLong(columnLastLogin));
                 } else {
-                    return new PlayerAuth(rs.getString(columnName), rs.getString(columnPassword), rs.getString(columnIp), rs.getLong(columnLastLogin));
+                    return new PlayerAuth(rs.getString(columnUuid), rs.getString(columnUsername), rs.getString(columnPassword), rs.getString(columnIp), rs.getLong(columnLastLogin));
                 }
             } else {
                 return null;
@@ -173,11 +195,12 @@ public class MySQLDataSource implements DataSource {
         PreparedStatement pst = null;
         try {
             con = conPool.getValidConnection();
-            pst = con.prepareStatement("INSERT INTO " + tableName + "(" + columnName + "," + columnPassword + "," + columnIp + "," + columnLastLogin + ") VALUES (?,?,?,?);");
-            pst.setString(1, auth.getNickname());
-            pst.setString(2, auth.getHash());
-            pst.setString(3, auth.getIp());
-            pst.setLong(4, auth.getLastLogin());
+            pst = con.prepareStatement("INSERT INTO " + tableName + "(" + columnUuid + "," + columnUsername + "," + columnPassword + "," + columnIp + "," + columnLastLogin + ") VALUES (?,?,?,?,?);");
+            pst.setString(1, auth.getUuid());
+            pst.setString(2, auth.getUsername());
+            pst.setString(3, auth.getHash());
+            pst.setString(4, auth.getIp());
+            pst.setLong(5, auth.getLastLogin());
             pst.executeUpdate();
         } catch (SQLException ex) {
             ConsoleLogger.showError(ex.getMessage());
@@ -198,9 +221,9 @@ public class MySQLDataSource implements DataSource {
         PreparedStatement pst = null;
         try {
             con = conPool.getValidConnection();
-            pst = con.prepareStatement("UPDATE " + tableName + " SET " + columnPassword + "=? WHERE " + columnName + "=?;");
+            pst = con.prepareStatement("UPDATE " + tableName + " SET " + columnPassword + "=? WHERE " + columnUuid + "=?;");
             pst.setString(1, auth.getHash());
-            pst.setString(2, auth.getNickname());
+            pst.setString(2, auth.getUuid());
             pst.executeUpdate();
         } catch (SQLException ex) {
             ConsoleLogger.showError(ex.getMessage());
@@ -221,10 +244,11 @@ public class MySQLDataSource implements DataSource {
         PreparedStatement pst = null;
         try {
             con = conPool.getValidConnection();
-            pst = con.prepareStatement("UPDATE " + tableName + " SET " + columnIp + "=?, " + columnLastLogin + "=? WHERE " + columnName + "=?;");
-            pst.setString(1, auth.getIp());
-            pst.setLong(2, auth.getLastLogin());
-            pst.setString(3, auth.getNickname());
+            pst = con.prepareStatement("UPDATE " + tableName + " SET " + columnUsername + "=?, " + columnIp + "=?, " + columnLastLogin + "=? WHERE " + columnUuid + "=?;");
+            pst.setString(1, auth.getUsername());
+            pst.setString(2, auth.getIp());
+            pst.setLong(3, auth.getLastLogin());
+            pst.setString(4, auth.getUuid());
             pst.executeUpdate();
         } catch (SQLException ex) {
             ConsoleLogger.showError(ex.getMessage());
@@ -261,13 +285,13 @@ public class MySQLDataSource implements DataSource {
     }
 
     @Override
-    public synchronized boolean removeAuth(String user) {
+    public synchronized boolean removeAuth(String uuid) {
         Connection con = null;
         PreparedStatement pst = null;
         try {
             con = conPool.getValidConnection();
-            pst = con.prepareStatement("DELETE FROM " + tableName + " WHERE " + columnName + "=?;");
-            pst.setString(1, user);
+            pst = con.prepareStatement("DELETE FROM " + tableName + " WHERE " + columnUuid + "=?;");
+            pst.setString(1, uuid);
             pst.executeUpdate();
         } catch (SQLException ex) {
             ConsoleLogger.showError(ex.getMessage());

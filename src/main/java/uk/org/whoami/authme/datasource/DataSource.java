@@ -25,9 +25,9 @@ public interface DataSource {
         MYSQL, FILE
     }
 
-    boolean isAuthAvailable(String user);
+    boolean isAuthAvailable(String uuid);
 
-    PlayerAuth getAuth(String user);
+    PlayerAuth getAuth(String uuid);
 
     boolean saveAuth(PlayerAuth auth);
 
@@ -37,7 +37,7 @@ public interface DataSource {
 
     int purgeDatabase(long until);
 
-    boolean removeAuth(String user);
+    boolean removeAuth(String uuid);
 
     void close();
 

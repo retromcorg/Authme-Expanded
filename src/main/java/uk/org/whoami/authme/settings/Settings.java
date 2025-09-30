@@ -29,7 +29,7 @@ public final class Settings extends Configuration {
 
     public static final String PLUGIN_FOLDER = "./plugins/AuthMe";
     public static final String CACHE_FOLDER = Settings.PLUGIN_FOLDER + "/cache";
-    public static final String AUTH_FILE = Settings.PLUGIN_FOLDER + "/auths.db";
+    public static final String AUTH_FILE = Settings.PLUGIN_FOLDER + "/auths-uuid.db";
     public static final String MESSAGE_FILE = Settings.PLUGIN_FOLDER + "/messages.yml";
     public static final String SETTINGS_FILE = Settings.PLUGIN_FOLDER + "/config.yml";
     private static Settings singleton;
@@ -68,7 +68,8 @@ public final class Settings extends Configuration {
         getMySQLPassword();
         getMySQLDatabase();
         getMySQLTablename();
-        getMySQLColumnName();
+        getMySQLColumnUuid();
+        getMySQLColumnUsername();
         getMySQLColumnPassword();
         getMySQLColumnIp();
         getMySQLColumnLastLogin();
@@ -290,8 +291,21 @@ public final class Settings extends Configuration {
         return getString(key);
     }
 
-    public String getMySQLColumnName() {
-        String key = "DataSource.mySQLColumnName";
+    public String getMySQLColumnUuid() {
+        String key = "DataSource.mySQLColumnUuid";
+        if (getString(key) == null) {
+            String legacyKey = "DataSource.mySQLColumnName";
+            if (getString(legacyKey) != null) {
+                setProperty(key, getString(legacyKey));
+            } else {
+                setProperty(key, "uuid");
+            }
+        }
+        return getString(key);
+    }
+
+    public String getMySQLColumnUsername() {
+        String key = "DataSource.mySQLColumnUsername";
         if (getString(key) == null) {
             setProperty(key, "username");
         }

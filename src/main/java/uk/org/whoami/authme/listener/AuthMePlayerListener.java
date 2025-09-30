@@ -79,17 +79,18 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
         if (CitizensCommunicator.isNPC(player)) {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (!data.isAuthAvailable(name)) {
+        if (!data.isAuthAvailable(uuid)) {
             if (!settings.isForcedRegistrationEnabled()) {
                 return;
             }
@@ -117,10 +118,11 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
         //HOTFIX - Start
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
@@ -133,11 +135,11 @@ public class AuthMePlayerListener extends PlayerListener {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (data.isAuthAvailable(name)) {
+        if (data.isAuthAvailable(uuid)) {
             player.sendMessage(m._("login_msg"));
         } else {
             if (!settings.isForcedRegistrationEnabled()) {
@@ -158,17 +160,18 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
         if (CitizensCommunicator.isNPC(player)) {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (data.isAuthAvailable(name)) {
+        if (data.isAuthAvailable(uuid)) {
             event.setTo(event.getFrom());
             return;
         }
@@ -204,6 +207,7 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
 
@@ -222,7 +226,7 @@ public class AuthMePlayerListener extends PlayerListener {
             }
             if (settings.isKickNonAuthenticatedEnabled() && !EvolutionAPI.isUserAuthenticatedInCache(event.getPlayer().getName(), event.getAddress().getHostAddress())) {
                 //PLayers without BetaEVO should be kicked
-                if (settings.isAllowRegisteredNonAuthenticatedBypassEnabled() && plugin.getAuthDatabase().isAuthAvailable(name)) {
+                if (settings.isAllowRegisteredNonAuthenticatedBypassEnabled() && plugin.getAuthDatabase().isAuthAvailable(uuid)) {
                     ConsoleLogger.info(player.getName() + " Has been allowed to join as they are registered, and the registered bypass for BetaEVO is activated.");
                 } else {
                     event.setKickMessage(Messages.getInstance()._("unauthenticatedKick"));
@@ -262,7 +266,7 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         if (settings.isKickNonRegisteredEnabled()) {
-            if (!data.isAuthAvailable(name)) {
+            if (!data.isAuthAvailable(uuid)) {
                 event.disallow(Result.KICK_OTHER, m._("reg_only"));
                 return;
             }
@@ -276,6 +280,7 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
         String ip = player.getAddress().getAddress().getHostAddress();
 
@@ -283,24 +288,28 @@ public class AuthMePlayerListener extends PlayerListener {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (data.isAuthAvailable(name)) {
+        if (data.isAuthAvailable(uuid)) {
             if (settings.isSessionsEnabled()) {
-                PlayerAuth auth = data.getAuth(name);
+                PlayerAuth auth = data.getAuth(uuid);
+                if (auth == null) {
+                    return;
+                }
                 long timeout = settings.getSessionTimeout() * 60000;
                 long lastLogin = auth.getLastLogin();
                 long cur = new Date().getTime();
 
-                if (auth.getNickname().equals(name) && auth.getIp().equals(ip) && (cur - lastLogin < timeout || timeout == 0)) {
+                if (auth.getUuid().equals(uuid) && auth.getIp().equals(ip) && (cur - lastLogin < timeout || timeout == 0)) {
                     //Login Event Start
                     final AuthLoginEvent loginEvent = new AuthLoginEvent(callLogin.Reason.AuthemeLogin, player);
                     Bukkit.getServer().getPluginManager().callEvent(loginEvent);
                     //Login Event End
 
                     if (!loginEvent.isCancelled()) {
+                        auth.setUsername(name);
                         PlayerCache.getInstance().addPlayer(auth);
                         player.sendMessage(m._("valid_session"));
                         callLogin(player, callLogin.Reason.AuthmeSession); // Run Event
@@ -322,15 +331,15 @@ public class AuthMePlayerListener extends PlayerListener {
             player.teleport(player.getWorld().getSpawnLocation());
         }
 
-        String msg = data.isAuthAvailable(name) ? m._("login_msg") : m._("reg_msg");
+        String msg = data.isAuthAvailable(uuid) ? m._("login_msg") : m._("reg_msg");
         int time = settings.getRegistrationTimeout() * 20;
         int msgInterval = settings.getWarnMessageInterval();
         BukkitScheduler sched = plugin.getServer().getScheduler();
         if (time != 0) {
-            int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, name), time);
-            LimboCache.getInstance().getLimboPlayer(name).setTimeoutTaskId(id);
+            int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, uuid), time);
+            LimboCache.getInstance().getLimboPlayer(uuid).setTimeoutTaskId(id);
         }
-        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, name, msg, msgInterval), 15); //Wait 0.75 seconds before starting AuthMe Login Message Task
+        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, uuid, msg, msgInterval), 15); //Wait 0.75 seconds before starting AuthMe Login Message Task
     }
 
     @Override
@@ -345,16 +354,17 @@ public class AuthMePlayerListener extends PlayerListener {
             return;
         }
 
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
-        if (LimboCache.getInstance().hasLimboPlayer(name)) {
-            LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(name);
+        if (LimboCache.getInstance().hasLimboPlayer(uuid)) {
+            LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(uuid);
             player.getInventory().setArmorContents(limbo.getArmour());
             player.getInventory().setContents(limbo.getInventory());
             player.teleport(limbo.getLoc());
             plugin.getServer().getScheduler().cancelTask(limbo.getTimeoutTaskId());
-            LimboCache.getInstance().deleteLimboPlayer(name);
+            LimboCache.getInstance().deleteLimboPlayer(uuid);
         }
-        PlayerCache.getInstance().removePlayer(name);
+        PlayerCache.getInstance().removePlayer(uuid);
     }
 
     @Override
@@ -369,16 +379,17 @@ public class AuthMePlayerListener extends PlayerListener {
             return;
         }
 
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
-        if (LimboCache.getInstance().hasLimboPlayer(name)) {
-            LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(name);
+        if (LimboCache.getInstance().hasLimboPlayer(uuid)) {
+            LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(uuid);
             player.getInventory().setArmorContents(limbo.getArmour());
             player.getInventory().setContents(limbo.getInventory());
             player.teleport(limbo.getLoc());
             plugin.getServer().getScheduler().cancelTask(limbo.getTimeoutTaskId());
-            LimboCache.getInstance().deleteLimboPlayer(name);
+            LimboCache.getInstance().deleteLimboPlayer(uuid);
         }
-        PlayerCache.getInstance().removePlayer(name);
+        PlayerCache.getInstance().removePlayer(uuid);
     }
 
     @Override
@@ -388,17 +399,18 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
         if (CitizensCommunicator.isNPC(player)) {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(player.getName().toLowerCase())) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (!data.isAuthAvailable(name)) {
+        if (!data.isAuthAvailable(uuid)) {
             if (!settings.isForcedRegistrationEnabled()) {
                 return;
             }
@@ -414,17 +426,18 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
         if (CitizensCommunicator.isNPC(player)) {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(player.getName().toLowerCase())) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (!data.isAuthAvailable(name)) {
+        if (!data.isAuthAvailable(uuid)) {
             if (!settings.isForcedRegistrationEnabled()) {
                 return;
             }
@@ -440,17 +453,18 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
         if (CitizensCommunicator.isNPC(player)) {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(player.getName().toLowerCase())) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (!data.isAuthAvailable(name)) {
+        if (!data.isAuthAvailable(uuid)) {
             if (!settings.isForcedRegistrationEnabled()) {
                 return;
             }
@@ -464,17 +478,18 @@ public class AuthMePlayerListener extends PlayerListener {
             return;
         }
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
         if (CitizensCommunicator.isNPC(player)) {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(player.getName().toLowerCase())) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (!data.isAuthAvailable(name)) {
+        if (!data.isAuthAvailable(uuid)) {
             if (!settings.isForcedRegistrationEnabled()) {
                 return;
             }
@@ -488,17 +503,18 @@ public class AuthMePlayerListener extends PlayerListener {
             return;
         }
         Player player = event.getPlayer();
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
         if (CitizensCommunicator.isNPC(player)) {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(player.getName().toLowerCase())) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (!data.isAuthAvailable(name)) {
+        if (!data.isAuthAvailable(uuid)) {
             if (!settings.isForcedRegistrationEnabled()) {
                 return;
             }

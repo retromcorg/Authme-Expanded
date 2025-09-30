@@ -16,8 +16,10 @@
 
 package uk.org.whoami.authme.commands;
 
+import java.nio.charset.StandardCharsets;
 import java.security.NoSuchAlgorithmException;
 import java.util.Date;
+import java.util.UUID;
 
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
@@ -93,14 +95,15 @@ public class AdminCommand implements CommandExecutor {
 
             try {
                 String name = args[1].toLowerCase();
+                String uuid = getOfflineUuid(args[1]);
                 String hash = PasswordSecurity.getHash(settings.getPasswordHash(), args[2]);
 
-                if (database.isAuthAvailable(name)) {
+                if (database.isAuthAvailable(uuid)) {
                     sender.sendMessage(m._("user_regged"));
                     return true;
                 }
 
-                PlayerAuth auth = new PlayerAuth(name, hash, "198.18.0.1", 0);
+                PlayerAuth auth = new PlayerAuth(uuid, name, hash, "198.18.0.1", 0);
                 if (!database.saveAuth(auth)) {
                     sender.sendMessage(m._("error"));
                     return true;
@@ -119,18 +122,20 @@ public class AdminCommand implements CommandExecutor {
 
             try {
                 String name = args[1].toLowerCase();
+                String uuid = getOfflineUuid(args[1]);
                 String hash = PasswordSecurity.getHash(settings.getPasswordHash(), args[2]);
 
                 PlayerAuth auth = null;
-                if (PlayerCache.getInstance().isAuthenticated(name)) {
-                    auth = PlayerCache.getInstance().getAuth(name);
-                } else if (database.isAuthAvailable(name)) {
-                    auth = database.getAuth(name);
+                if (PlayerCache.getInstance().isAuthenticated(uuid)) {
+                    auth = PlayerCache.getInstance().getAuth(uuid);
+                } else if (database.isAuthAvailable(uuid)) {
+                    auth = database.getAuth(uuid);
                 } else {
                     sender.sendMessage(m._("unknown_user"));
                     return true;
                 }
                 auth.setHash(hash);
+                auth.setUsername(name);
 
                 if (!database.updatePassword(auth)) {
                     sender.sendMessage(m._("error"));
@@ -150,13 +155,14 @@ public class AdminCommand implements CommandExecutor {
             }
 
             String name = args[1].toLowerCase();
+            String uuid = getOfflineUuid(args[1]);
 
-            if (!database.removeAuth(name)) {
+            if (!database.removeAuth(uuid)) {
                 sender.sendMessage(m._("error"));
                 return true;
             }
 
-            PlayerCache.getInstance().removePlayer(name);
+            PlayerCache.getInstance().removePlayer(uuid);
             sender.sendMessage("unregistered");
 
             ConsoleLogger.info(args[1] + " unregistered");
@@ -164,5 +170,9 @@ public class AdminCommand implements CommandExecutor {
             sender.sendMessage("Usage: /authme reload|register playername password|changepassword playername password|unregister playername");
         }
         return true;
+}
+
+    private String getOfflineUuid(String playerName) {
+        return UUID.nameUUIDFromBytes(("OfflinePlayer:" + playerName).getBytes(StandardCharsets.UTF_8)).toString();
     }
 }

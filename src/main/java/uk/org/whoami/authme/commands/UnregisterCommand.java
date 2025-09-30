@@ -60,9 +60,10 @@ public class UnregisterCommand implements CommandExecutor {
         }
 
         Player player = (Player) sender;
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
-        if (!PlayerCache.getInstance().isAuthenticated(name)) {
+        if (!PlayerCache.getInstance().isAuthenticated(uuid)) {
             player.sendMessage(m._("not_logged_in"));
             return true;
         }
@@ -76,7 +77,7 @@ public class UnregisterCommand implements CommandExecutor {
             //Check if their password is correct
             try {
                 //If password is incorrect prevent change
-                if (!PasswordSecurity.comparePasswordWithHash(args[0], PlayerCache.getInstance().getAuth(name).getHash())) {
+                if (!PasswordSecurity.comparePasswordWithHash(args[0], PlayerCache.getInstance().getAuth(uuid).getHash())) {
                     player.sendMessage(m._("wrong_pwd"));
                     return true;
                 }
@@ -90,11 +91,11 @@ public class UnregisterCommand implements CommandExecutor {
             ConsoleLogger.info(player.getName() + " Has authenticated an unregister using Beta Evolutions");
         }
 
-        if (!database.removeAuth(name)) {
+        if (!database.removeAuth(uuid)) {
             player.sendMessage("error");
             return true;
         }
-        PlayerCache.getInstance().removePlayer(player.getName().toLowerCase());
+        PlayerCache.getInstance().removePlayer(uuid);
         LimboCache.getInstance().addLimboPlayer(player);
         player.getInventory().setArmorContents(new ItemStack[0]);
         player.getInventory().setContents(new ItemStack[36]);
@@ -103,10 +104,10 @@ public class UnregisterCommand implements CommandExecutor {
         int interval = settings.getWarnMessageInterval();
         BukkitScheduler sched = sender.getServer().getScheduler();
         if (delay != 0) {
-            int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, name), delay);
-            LimboCache.getInstance().getLimboPlayer(name).setTimeoutTaskId(id);
+            int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, uuid), delay);
+            LimboCache.getInstance().getLimboPlayer(uuid).setTimeoutTaskId(id);
         }
-        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, name, m._("reg_msg"), interval));
+        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, uuid, m._("reg_msg"), interval));
 
         player.sendMessage("unregistered");
         ConsoleLogger.info(player.getDisplayName() + " unregistered himself");
