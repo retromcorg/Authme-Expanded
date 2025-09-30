@@ -61,10 +61,11 @@ public class RegisterCommand implements CommandExecutor {
         }
 
         Player player = (Player) sender;
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
         String ip = player.getAddress().getAddress().getHostAddress();
 
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             player.sendMessage(m._("logged_in"));
             return true;
         }
@@ -79,7 +80,7 @@ public class RegisterCommand implements CommandExecutor {
             return true;
         }
 
-        if (database.isAuthAvailable(player.getName().toLowerCase())) {
+        if (database.isAuthAvailable(uuid)) {
             player.sendMessage(m._("user_regged"));
             return true;
         }
@@ -95,14 +96,14 @@ public class RegisterCommand implements CommandExecutor {
         try {
             String hash = PasswordSecurity.getHash(settings.getPasswordHash(), args[0]);
 
-            PlayerAuth auth = new PlayerAuth(name, hash, ip, new Date().getTime());
+            PlayerAuth auth = new PlayerAuth(uuid, name, hash, ip, new Date().getTime());
             if (!database.saveAuth(auth)) {
                 player.sendMessage(m._("error"));
                 return true;
             }
             PlayerCache.getInstance().addPlayer(auth);
 
-            LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(name);
+            LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(uuid);
             if (limbo != null) {
                 player.getInventory().setContents(limbo.getInventory());
                 player.getInventory().setArmorContents(limbo.getArmour());
@@ -111,7 +112,7 @@ public class RegisterCommand implements CommandExecutor {
                 }
 
                 sender.getServer().getScheduler().cancelTask(limbo.getTimeoutTaskId());
-                LimboCache.getInstance().deleteLimboPlayer(name);
+                LimboCache.getInstance().deleteLimboPlayer(uuid);
             }
 
             player.sendMessage(m._("registered"));

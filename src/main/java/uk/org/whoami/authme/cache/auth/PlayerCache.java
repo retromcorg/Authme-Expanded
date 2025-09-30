@@ -28,24 +28,24 @@ public class PlayerCache {
     }
 
     public void addPlayer(PlayerAuth auth) {
-        cache.put(auth.getNickname(), auth);
+        cache.put(auth.getUuid(), auth);
     }
 
     public void updatePlayer(PlayerAuth auth) {
-        cache.remove(auth.getNickname());
-        cache.put(auth.getNickname(), auth);
+        cache.remove(auth.getUuid());
+        cache.put(auth.getUuid(), auth);
     }
 
-    public void removePlayer(String user) {
-        cache.remove(user);
+    public void removePlayer(String uuid) {
+        cache.remove(uuid);
     }
 
-    public boolean isAuthenticated(String user) {
-        return cache.containsKey(user);
+    public boolean isAuthenticated(String uuid) {
+        return cache.containsKey(uuid);
     }
 
-    public PlayerAuth getAuth(String user) {
-        return cache.get(user);
+    public PlayerAuth getAuth(String uuid) {
+        return cache.get(uuid);
     }
 
     public static PlayerCache getInstance() {

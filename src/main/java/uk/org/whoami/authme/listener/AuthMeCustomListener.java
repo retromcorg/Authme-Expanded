@@ -74,16 +74,17 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
             }
 
             String playerName = player.getName().toLowerCase();
+            String uuid = player.getUniqueId().toString();
             String ip = player.getAddress().getAddress().getHostAddress();
             if (((PlayerEvolutionAuthEvent) event).isPlayerAuthenticated()) {
                 //Player is authenticated
-                if (PlayerCache.getInstance().isAuthenticated(playerName)) {
+                if (PlayerCache.getInstance().isAuthenticated(uuid)) {
                     //Player is already authenticated with Authme
                     return;
                 }
 
                 //Check if user is brand new
-                if (!plugin.getAuthDatabase().isAuthAvailable(playerName)) {
+                if (!plugin.getAuthDatabase().isAuthAvailable(uuid)) {
 
                     //Generate random password to register user
                     if (settings.isAutoRegisterAuthenticatedEnabled()) {
@@ -93,7 +94,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                             try {
                                 //Save a random password for user
                                 String hash = PasswordSecurity.getHash(settings.getPasswordHash(), password);
-                                PlayerAuth auth = new PlayerAuth(playerName, hash, ip, new Date().getTime());
+                                PlayerAuth auth = new PlayerAuth(uuid, playerName, hash, ip, new Date().getTime());
                                 if (!plugin.getAuthDatabase().saveAuth(auth)) {
                                     ConsoleLogger.showError("Failed to save Auth to database for " + playerName);
                                     return;
@@ -124,9 +125,12 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
 
 
                 //Lets authenticate the user
-                PlayerAuth auth = plugin.getAuthDatabase().getAuth(playerName);
-                PlayerCache.getInstance().addPlayer(auth);
-                LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(playerName);
+                PlayerAuth auth = plugin.getAuthDatabase().getAuth(uuid);
+                if (auth != null) {
+                    auth.setUsername(playerName);
+                    PlayerCache.getInstance().addPlayer(auth);
+                }
+                LimboPlayer limbo = LimboCache.getInstance().getLimboPlayer(uuid);
                 //Remove from limbo if player is in Limbo
                 if (limbo != null) {
                     player.getInventory().setContents(limbo.getInventory());
@@ -135,7 +139,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
                         player.teleport(limbo.getLoc());
                     }
                     plugin.getServer().getScheduler().cancelTask(limbo.getTimeoutTaskId());
-                    LimboCache.getInstance().deleteLimboPlayer(playerName);
+                    LimboCache.getInstance().deleteLimboPlayer(uuid);
 
 
                 }
@@ -161,7 +165,7 @@ public class AuthMeCustomListener extends CustomEventListener implements Listene
 
                 if (!plugin.isRunningPoseidon()) {
                     if (settings.isKickNonAuthenticatedEnabled()) {
-                        if (settings.isAllowRegisteredNonAuthenticatedBypassEnabled() && plugin.getAuthDatabase().isAuthAvailable(playerName)) {
+                        if (settings.isAllowRegisteredNonAuthenticatedBypassEnabled() && plugin.getAuthDatabase().isAuthAvailable(uuid)) {
                         ConsoleLogger.info(player.getName() + " Has been allowed to join as they are registered, and the registered bypass for BetaEVO is activated.");
                         } else {
                             //Kick non authenticated users

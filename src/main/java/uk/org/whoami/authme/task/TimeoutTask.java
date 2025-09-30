@@ -26,33 +26,29 @@ import uk.org.whoami.authme.settings.Messages;
 
 public class TimeoutTask implements Runnable {
 
-    private JavaPlugin plugin;
-    private String name;
-    private Messages m = Messages.getInstance();
+    private final JavaPlugin plugin;
+    private final String uuid;
+    private final Messages m = Messages.getInstance();
 
-    public TimeoutTask(JavaPlugin plugin, String name) {
+    public TimeoutTask(JavaPlugin plugin, String uuid) {
         this.plugin = plugin;
-        this.name = name;
-    }
-
-    public String getName() {
-        return name;
+        this.uuid = uuid;
     }
 
     @Override
     public void run() {
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
         for (Player player : plugin.getServer().getOnlinePlayers()) {
-            if (player.getName().toLowerCase().equals(name)) {
-                if (LimboCache.getInstance().hasLimboPlayer(name)) {
-                    LimboPlayer inv = LimboCache.getInstance().getLimboPlayer(name);
+            if (player.getUniqueId().toString().equals(uuid)) {
+                if (LimboCache.getInstance().hasLimboPlayer(uuid)) {
+                    LimboPlayer inv = LimboCache.getInstance().getLimboPlayer(uuid);
                     player.getInventory().setArmorContents(inv.getArmour());
                     player.getInventory().setContents(inv.getInventory());
                     player.teleport(inv.getLoc());
-                    LimboCache.getInstance().deleteLimboPlayer(name);
+                    LimboCache.getInstance().deleteLimboPlayer(uuid);
                 }
                 player.kickPlayer(m._("timeout"));
                 break;

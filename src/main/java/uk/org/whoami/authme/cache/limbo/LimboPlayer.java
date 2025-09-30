@@ -21,6 +21,7 @@ import org.bukkit.inventory.ItemStack;
 
 public class LimboPlayer {
 
+    private final String uuid;
     private String name;
     private ItemStack[] inventory;
     private ItemStack[] armour;
@@ -28,12 +29,17 @@ public class LimboPlayer {
     private int timeoutTaskId = -1;
     private int gameMode = 0;
 
-    public LimboPlayer(String name, Location loc, ItemStack[] inventory, ItemStack[] armour) {
+    public LimboPlayer(String uuid, String name, Location loc, ItemStack[] inventory, ItemStack[] armour) {
+        this.uuid = uuid;
         this.name = name;
         this.loc = loc;
         this.inventory = inventory;
         this.armour = armour;
         this.gameMode = gameMode;
+    }
+
+    public String getUuid() {
+        return uuid;
     }
 
     public String getName() {

@@ -42,17 +42,17 @@ public class AuthMeBlockListener extends BlockListener {
         }
 
         Player player = event.getPlayer();
-        String name = player.getName().toLowerCase();
+        String uuid = player.getUniqueId().toString();
 
         if(CitizensCommunicator.isNPC(player)) {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (!data.isAuthAvailable(name)) {
+        if (!data.isAuthAvailable(uuid)) {
             if (!settings.isForcedRegistrationEnabled()) {
                 return;
             }
@@ -68,17 +68,17 @@ public class AuthMeBlockListener extends BlockListener {
         }
 
         Player player = event.getPlayer();
-        String name = player.getName().toLowerCase();
+        String uuid = player.getUniqueId().toString();
 
         if(CitizensCommunicator.isNPC(player)) {
             return;
         }
 
-        if (PlayerCache.getInstance().isAuthenticated(player.getName().toLowerCase())) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
-        if (!data.isAuthAvailable(name)) {
+        if (!data.isAuthAvailable(uuid)) {
             if (!settings.isForcedRegistrationEnabled()) {
                 return;
             }

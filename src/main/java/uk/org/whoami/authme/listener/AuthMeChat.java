@@ -12,7 +12,7 @@ public class AuthMeChat extends PlayerListener {
             return;
         }
         //HOTFIX - Start
-        if (PlayerCache.getInstance().isAuthenticated(event.getPlayer().getName().toLowerCase())) {
+        if (PlayerCache.getInstance().isAuthenticated(event.getPlayer().getUniqueId().toString())) {
             return;
         }
         event.setCancelled(true);

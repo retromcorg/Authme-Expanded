@@ -58,19 +58,23 @@ public class LogoutCommand implements CommandExecutor {
         }
 
         Player player = (Player) sender;
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
 
-        if (!PlayerCache.getInstance().isAuthenticated(name)) {
+        if (!PlayerCache.getInstance().isAuthenticated(uuid)) {
             player.sendMessage(m._("not_logged_in"));
             return true;
         }
 
         //clear session
-        PlayerAuth auth = PlayerCache.getInstance().getAuth(name);
-        auth.setIp("198.18.0.1");
-        database.updateSession(auth);
+        PlayerAuth auth = PlayerCache.getInstance().getAuth(uuid);
+        if (auth != null) {
+            auth.setUsername(name);
+            auth.setIp("198.18.0.1");
+            database.updateSession(auth);
+        }
 
-        PlayerCache.getInstance().removePlayer(name);
+        PlayerCache.getInstance().removePlayer(uuid);
 
         LimboCache.getInstance().addLimboPlayer(player);
         player.getInventory().setArmorContents(new ItemStack[0]);
@@ -83,10 +87,10 @@ public class LogoutCommand implements CommandExecutor {
         int interval = settings.getWarnMessageInterval();
         BukkitScheduler sched = sender.getServer().getScheduler();
         if (delay != 0) {
-            int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, name), delay);
-            LimboCache.getInstance().getLimboPlayer(name).setTimeoutTaskId(id);
+            int id = sched.scheduleSyncDelayedTask(plugin, new TimeoutTask(plugin, uuid), delay);
+            LimboCache.getInstance().getLimboPlayer(uuid).setTimeoutTaskId(id);
         }
-        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, name, m._("login_msg"), interval));
+        sched.scheduleSyncDelayedTask(plugin, new MessageTask(plugin, uuid, m._("login_msg"), interval));
 
         player.sendMessage(m._("logout"));
         ConsoleLogger.info(player.getDisplayName() + " logged out");

@@ -24,26 +24,26 @@ import uk.org.whoami.authme.cache.auth.PlayerCache;
 
 public class MessageTask implements Runnable {
 
-    private JavaPlugin plugin;
-    private String name;
-    private String msg;
-    private int interval;
+    private final JavaPlugin plugin;
+    private final String uuid;
+    private final String msg;
+    private final int interval;
 
-    public MessageTask(JavaPlugin plugin, String name, String msg, int interval) {
+    public MessageTask(JavaPlugin plugin, String uuid, String msg, int interval) {
         this.plugin = plugin;
-        this.name = name;
+        this.uuid = uuid;
         this.msg = msg;
         this.interval = interval;
     }
 
     @Override
     public void run() {
-        if (PlayerCache.getInstance().isAuthenticated(name)) {
+        if (PlayerCache.getInstance().isAuthenticated(uuid)) {
             return;
         }
 
         for (Player player : plugin.getServer().getOnlinePlayers()) {
-            if (player.getName().toLowerCase().equals(name)) {
+            if (player.getUniqueId().toString().equals(uuid)) {
                 player.sendMessage(msg);
 
                 BukkitScheduler sched = plugin.getServer().getScheduler();

@@ -33,11 +33,7 @@ public class FileDataSource implements DataSource {
 
     /* file layout:
      *
-     * PLAYERNAME:HASHSUM:IP:LOGININMILLIESECONDS
-     *
-     * Old but compatible:
-     * PLAYERNAME:HASHSUM:IP
-     * PLAYERNAME:HASHSUM
+     * UUID:USERNAME:HASHSUM:IP:LOGININMILLIESECONDS
      *
      */
     private File source;
@@ -48,14 +44,14 @@ public class FileDataSource implements DataSource {
     }
 
     @Override
-    public synchronized boolean isAuthAvailable(String user) {
+    public synchronized boolean isAuthAvailable(String uuid) {
         BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(source));
             String line;
             while ((line = br.readLine()) != null) {
                 String[] args = line.split(":");
-                if (args.length > 1 && args[0].equals(user)) {
+                if (args.length > 0 && args[0].equals(uuid)) {
                     return true;
                 }
             }
@@ -78,14 +74,14 @@ public class FileDataSource implements DataSource {
 
     @Override
     public synchronized boolean saveAuth(PlayerAuth auth) {
-        if (isAuthAvailable(auth.getNickname())) {
+        if (isAuthAvailable(auth.getUuid())) {
             return false;
         }
 
         BufferedWriter bw = null;
         try {
             bw = new BufferedWriter(new FileWriter(source, true));
-            bw.write(auth.getNickname() + ":" + auth.getHash() + ":" + auth.getIp() + ":" + auth.getLastLogin() + "\n");
+            bw.write(formatAuth(auth) + "\n");
         } catch (IOException ex) {
             ConsoleLogger.showError(ex.getMessage());
             return false;
@@ -102,11 +98,11 @@ public class FileDataSource implements DataSource {
 
     @Override
     public synchronized boolean updatePassword(PlayerAuth auth) {
-        if (!isAuthAvailable(auth.getNickname())) {
+        if (!isAuthAvailable(auth.getUuid())) {
             return false;
         }
 
-        PlayerAuth newAuth = null;
+        PlayerAuth currentAuth = null;
 
         BufferedReader br = null;
         try {
@@ -114,8 +110,8 @@ public class FileDataSource implements DataSource {
             String line = "";
             while ((line = br.readLine()) != null) {
                 String[] args = line.split(":");
-                if (args[0].equals(auth.getNickname())) {
-                    newAuth = new PlayerAuth(args[0], auth.getHash(), args[2], Long.parseLong(args[3]));
+                if (args.length > 0 && args[0].equals(auth.getUuid())) {
+                    currentAuth = parseAuth(args);
                     break;
                 }
             }
@@ -133,18 +129,24 @@ public class FileDataSource implements DataSource {
                 }
             }
         }
-        removeAuth(auth.getNickname());
-        saveAuth(newAuth);
+
+        if (currentAuth == null) {
+            return false;
+        }
+
+        PlayerAuth updated = new PlayerAuth(currentAuth.getUuid(), currentAuth.getUsername(), auth.getHash(), currentAuth.getIp(), currentAuth.getLastLogin());
+        removeAuth(auth.getUuid());
+        saveAuth(updated);
         return true;
     }
 
     @Override
     public boolean updateSession(PlayerAuth auth) {
-        if (!isAuthAvailable(auth.getNickname())) {
+        if (!isAuthAvailable(auth.getUuid())) {
             return false;
         }
 
-        PlayerAuth newAuth = null;
+        PlayerAuth currentAuth = null;
 
         BufferedReader br = null;
         try {
@@ -152,8 +154,8 @@ public class FileDataSource implements DataSource {
             String line = "";
             while ((line = br.readLine()) != null) {
                 String[] args = line.split(":");
-                if (args[0].equals(auth.getNickname())) {
-                    newAuth = new PlayerAuth(args[0], args[1], auth.getIp(), auth.getLastLogin());
+                if (args.length > 0 && args[0].equals(auth.getUuid())) {
+                    currentAuth = parseAuth(args);
                     break;
                 }
             }
@@ -171,8 +173,14 @@ public class FileDataSource implements DataSource {
                 }
             }
         }
-        removeAuth(auth.getNickname());
-        saveAuth(newAuth);
+
+        if (currentAuth == null) {
+            return false;
+        }
+
+        PlayerAuth updated = new PlayerAuth(currentAuth.getUuid(), auth.getUsername(), currentAuth.getHash(), auth.getIp(), auth.getLastLogin());
+        removeAuth(auth.getUuid());
+        saveAuth(updated);
         return true;
     }
 
@@ -188,11 +196,10 @@ public class FileDataSource implements DataSource {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] args = line.split(":");
-                if (args.length == 4) {
-                    if (Long.parseLong(args[3]) >= until) {
-                        lines.add(line);
-                        continue;
-                    }
+                PlayerAuth auth = parseAuth(args);
+                if (auth != null && auth.getLastLogin() >= until) {
+                    lines.add(formatAuth(auth));
+                    continue;
                 }
                 cleared++;
             }
@@ -225,8 +232,8 @@ public class FileDataSource implements DataSource {
     }
 
     @Override
-    public synchronized boolean removeAuth(String user) {
-        if (!isAuthAvailable(user)) {
+    public synchronized boolean removeAuth(String uuid) {
+        if (!isAuthAvailable(uuid)) {
             return false;
         }
 
@@ -238,8 +245,9 @@ public class FileDataSource implements DataSource {
             String line;
             while ((line = br.readLine()) != null) {
                 String[] args = line.split(":");
-                if (args.length > 1 && !args[0].equals(user)) {
-                    lines.add(line);
+                PlayerAuth auth = parseAuth(args);
+                if (auth != null && !auth.getUuid().equals(uuid)) {
+                    lines.add(formatAuth(auth));
                 }
             }
 
@@ -271,21 +279,17 @@ public class FileDataSource implements DataSource {
     }
 
     @Override
-    public synchronized PlayerAuth getAuth(String user) {
+    public synchronized PlayerAuth getAuth(String uuid) {
         BufferedReader br = null;
         try {
             br = new BufferedReader(new FileReader(source));
             String line;
             while ((line = br.readLine()) != null) {
                 String[] args = line.split(":");
-                if (args[0].equals(user)) {
-                    switch (args.length) {
-                        case 2:
-                            return new PlayerAuth(args[0], args[1], "198.18.0.1", 0);
-                        case 3:
-                            return new PlayerAuth(args[0], args[1], args[2], 0);
-                        case 4:
-                            return new PlayerAuth(args[0], args[1], args[2], Long.parseLong(args[3]));
+                if (args.length > 0 && args[0].equals(uuid)) {
+                    PlayerAuth auth = parseAuth(args);
+                    if (auth != null) {
+                        return auth;
                     }
                 }
             }
@@ -312,5 +316,34 @@ public class FileDataSource implements DataSource {
 
     @Override
     public void reload() {
+    }
+
+    private PlayerAuth parseAuth(String[] args) {
+        if (args.length < 3) {
+            return null;
+        }
+
+        String uuid = args[0];
+        String username = args[1];
+        String hash = args[2];
+        String ip = "198.18.0.1";
+        if (args.length > 3 && !args[3].isEmpty()) {
+            ip = args[3];
+        }
+
+        long lastLogin = 0;
+        if (args.length > 4) {
+            try {
+                lastLogin = Long.parseLong(args[4]);
+            } catch (NumberFormatException ex) {
+                lastLogin = 0;
+            }
+        }
+
+        return new PlayerAuth(uuid, username, hash, ip, lastLogin);
+    }
+
+    private String formatAuth(PlayerAuth auth) {
+        return auth.getUuid() + ":" + auth.getUsername() + ":" + auth.getHash() + ":" + auth.getIp() + ":" + auth.getLastLogin();
     }
 }

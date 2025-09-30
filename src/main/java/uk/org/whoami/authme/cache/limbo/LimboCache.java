@@ -32,25 +32,26 @@ public class LimboCache {
     }
 
     public void addLimboPlayer(Player player) {
+        String uuid = player.getUniqueId().toString();
         String name = player.getName().toLowerCase();
         Location loc = player.getLocation();
         ItemStack[] inv = player.getInventory().getContents();
         ItemStack[] arm = player.getInventory().getArmorContents();
         //int gameMode = player.getGameMode().getValue();
 
-        cache.put(player.getName().toLowerCase(), new LimboPlayer(name, loc, inv, arm));
+        cache.put(uuid, new LimboPlayer(uuid, name, loc, inv, arm));
     }
 
-    public void deleteLimboPlayer(String name) {
-        cache.remove(name);
+    public void deleteLimboPlayer(String uuid) {
+        cache.remove(uuid);
     }
 
-    public LimboPlayer getLimboPlayer(String name) {
-        return cache.get(name);
+    public LimboPlayer getLimboPlayer(String uuid) {
+        return cache.get(uuid);
     }
 
-    public boolean hasLimboPlayer(String name) {
-        return cache.containsKey(name);
+    public boolean hasLimboPlayer(String uuid) {
+        return cache.containsKey(uuid);
     }
 
     public static LimboCache getInstance() {
