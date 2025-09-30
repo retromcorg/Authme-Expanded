@@ -158,7 +158,7 @@ public class AuthMe extends JavaPlugin {
         pm.registerEvent(Event.Type.ENTITY_TARGET, entityListener,
                 Priority.Lowest, this);
 
-        this.getCommand("authme").setExecutor(new AdminCommand(database));
+        this.getCommand("authme").setExecutor(new AdminCommand(this, database));
         this.getCommand("register").setExecutor(new RegisterCommand(this, database));
         this.getCommand("login").setExecutor(new LoginCommand(database));
         this.getCommand("changepassword").setExecutor(new ChangePasswordCommand(database));
