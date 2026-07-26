@@ -44,6 +44,10 @@ public class LimboPlayer {
         return loc;
     }
 
+    public void setLoc(Location loc) {
+        this.loc = loc;
+    }
+
     public ItemStack[] getArmour() {
         return armour;
     }
