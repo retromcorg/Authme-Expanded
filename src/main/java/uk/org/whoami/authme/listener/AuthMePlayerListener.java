@@ -39,6 +39,7 @@ import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -316,6 +317,15 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         LimboCache.getInstance().addLimboPlayer(player);
+        //If the player reconnected while dead (still on the respawn screen), the
+        //location captured above is the spot where they died. Leaving it in the
+        //limbo cache would let /login teleport them back there after they respawn
+        //(respawn-at-death exploit). A dead player has no valid location to
+        //return to, so fall back to the world spawn. onPlayerRespawn refines this
+        //to their actual respawn point (e.g. bed) once they respawn.
+        if (player.isDead() || player.getHealth() <= 0) {
+            LimboCache.getInstance().getLimboPlayer(name).setLoc(player.getWorld().getSpawnLocation());
+        }
         player.getInventory().setArmorContents(new ItemStack[0]);
         player.getInventory().setContents(new ItemStack[36]);
         if (settings.isTeleportToSpawnEnabled()) {
@@ -379,6 +389,28 @@ public class AuthMePlayerListener extends PlayerListener {
             LimboCache.getInstance().deleteLimboPlayer(name);
         }
         PlayerCache.getInstance().removePlayer(name);
+    }
+
+    @Override
+    public void onPlayerRespawn(PlayerRespawnEvent event) {
+        if (event.getPlayer() == null) {
+            return;
+        }
+
+        Player player = event.getPlayer();
+        String name = player.getName().toLowerCase();
+
+        if (CitizensCommunicator.isNPC(player)) {
+            return;
+        }
+
+        if (PlayerCache.getInstance().isAuthenticated(name)) {
+            return;
+        }
+
+        if (LimboCache.getInstance().hasLimboPlayer(name)) {
+            LimboCache.getInstance().getLimboPlayer(name).setLoc(event.getRespawnLocation());
+        }
     }
 
     @Override

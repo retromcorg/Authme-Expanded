@@ -6,7 +6,7 @@
 
     <groupId>org.retromc</groupId>
     <artifactId>Authme-Expanded</artifactId>
-    <version>3.6.3</version>
+    <version>3.6.4</version>
     <description>A fork of AuthMe utilized by RetroMC</description>
 
     <properties>
