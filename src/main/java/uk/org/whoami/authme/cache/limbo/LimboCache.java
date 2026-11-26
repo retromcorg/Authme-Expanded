@@ -21,6 +21,7 @@ import java.util.HashMap;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 
 public class LimboCache {
 
@@ -39,6 +40,15 @@ public class LimboCache {
         //int gameMode = player.getGameMode().getValue();
 
         cache.put(player.getName().toLowerCase(), new LimboPlayer(name, loc, inv, arm));
+    }
+
+    public static void clearInventory(Player player) {
+        PlayerInventory inv = player.getInventory();
+        inv.setHelmet(null);
+        inv.setChestplate(null);
+        inv.setLeggings(null);
+        inv.setBoots(null);
+        inv.setContents(new ItemStack[36]);
     }
 
     public void deleteLimboPlayer(String name) {

@@ -21,7 +21,6 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 import uk.org.whoami.authme.ConsoleLogger;
@@ -96,8 +95,7 @@ public class UnregisterCommand implements CommandExecutor {
         }
         PlayerCache.getInstance().removePlayer(player.getName().toLowerCase());
         LimboCache.getInstance().addLimboPlayer(player);
-        player.getInventory().setArmorContents(new ItemStack[0]);
-        player.getInventory().setContents(new ItemStack[36]);
+        LimboCache.clearInventory(player);
 
         int delay = settings.getRegistrationTimeout() * 20;
         int interval = settings.getWarnMessageInterval();

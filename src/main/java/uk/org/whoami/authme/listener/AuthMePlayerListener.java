@@ -39,7 +39,6 @@ import org.bukkit.event.player.PlayerLoginEvent.Result;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerPickupItemEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
@@ -316,8 +315,7 @@ public class AuthMePlayerListener extends PlayerListener {
         }
 
         LimboCache.getInstance().addLimboPlayer(player);
-        player.getInventory().setArmorContents(new ItemStack[0]);
-        player.getInventory().setContents(new ItemStack[36]);
+        LimboCache.clearInventory(player);
         if (settings.isTeleportToSpawnEnabled()) {
             player.teleport(player.getWorld().getSpawnLocation());
         }

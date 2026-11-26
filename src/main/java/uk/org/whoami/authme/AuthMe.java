@@ -20,7 +20,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Event;
 import org.bukkit.event.Event.Priority;
-import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
@@ -215,8 +214,7 @@ public class AuthMe extends JavaPlugin {
             }
 
             LimboCache.getInstance().addLimboPlayer(player);
-            player.getInventory().setArmorContents(new ItemStack[0]);
-            player.getInventory().setContents(new ItemStack[36]);
+            LimboCache.clearInventory(player);
 
             if (settings.isTeleportToSpawnEnabled()) {
                 player.teleport(player.getWorld().getSpawnLocation());
